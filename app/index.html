@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sjakkverkstedet</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: chess workshop — app bar with three tabs; each tab is board-left, panel-right, stacking on phones */
+:root{
+  --bg:#eef0ec; --surface:#fbfcfa; --ink:#1d2421; --muted:#5f6b66; --line:#d5dad5; --field:#ffffff;
+  --accent:#2f5d8a; --on-accent:#ffffff; --sq-light:#e6e2cc; --sq-dark:#7c9b80; --hl:rgba(246,218,90,.55);
+  --sel:rgba(47,93,138,.35); --dot:rgba(29,36,33,.28); --check:rgba(217,58,43,.75); --wrong:rgba(217,58,43,.45); --right:rgba(106,161,60,.5);
+  --bar-white:#f6f6f2; --bar-black:#2a2f2d; --arrow:rgba(40,120,200,.78); --err:#b3261e; --ok:#3f7d22;
+  --c-brilliant:#1a9e98; --c-great:#5383ad; --c-best:#6aa13c; --c-excellent:#88ad3e; --c-good:#7f9d79;
+  --c-book:#9a7a56; --c-forced:#7f9d79; --c-inaccuracy:#d9a812; --c-mistake:#e8833a; --c-blunder:#d93a2b; --c-pending:#a3aca8;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141917; --surface:#1d2321; --ink:#e7ece9; --muted:#9aa7a1; --line:#313a37; --field:#151a18;
+  --accent:#7fb0de; --on-accent:#0d1a26; --sq-light:#cfcab1; --sq-dark:#6b8a70; --hl:rgba(246,218,90,.5);
+  --sel:rgba(127,176,222,.45); --dot:rgba(10,14,12,.4); --check:rgba(242,110,98,.8); --wrong:rgba(242,110,98,.5); --right:rgba(140,200,90,.5);
+  --bar-white:#eceee8; --bar-black:#0c0f0e; --arrow:rgba(95,165,235,.82); --err:#f2867e; --ok:#9ccf7a; --c-pending:#5d6763; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141917; --surface:#1d2321; --ink:#e7ece9; --muted:#9aa7a1; --line:#313a37; --field:#151a18;
+  --accent:#7fb0de; --on-accent:#0d1a26; --sq-light:#cfcab1; --sq-dark:#6b8a70; --hl:rgba(246,218,90,.5);
+  --sel:rgba(127,176,222,.45); --dot:rgba(10,14,12,.4); --check:rgba(242,110,98,.8); --wrong:rgba(242,110,98,.5); --right:rgba(140,200,90,.5);
+  --bar-white:#eceee8; --bar-black:#0c0f0e; --arrow:rgba(95,165,235,.82); --err:#f2867e; --ok:#9ccf7a; --c-pending:#5d6763; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.hint{font-size:13px;color:var(--muted);margin:0}
+
+/* app bar */
+.appbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.brand{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand svg{width:22px;height:22px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;flex-wrap:wrap}
+.tabs a{font-weight:700;font-size:14px;text-decoration:none;color:var(--muted);padding:6px 12px;border-radius:7px}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{background:var(--accent);color:var(--on-accent)}
+.tabs a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header h1{font-family:var(--f-display);font-weight:800;font-stretch:112%;font-size:clamp(24px,4vw,34px);letter-spacing:-.01em;margin:0;text-wrap:balance;overflow-wrap:anywhere}
+header p{margin:4px 0 0;color:var(--muted)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 2px}
+.opening{display:inline-flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;padding:3px 10px 3px 4px;border:1px solid var(--line);border-radius:999px;background:var(--surface);max-width:100%}
+.opening .eco{font-family:var(--f-mono);font-weight:700;font-size:12px;background:var(--c-book);color:#fff;border-radius:999px;padding:1px 7px}
+.opening span:last-child{overflow-wrap:anywhere}
+.tab{display:grid;gap:20px}
+
+/* shared controls */
+.btn{font:inherit;font-weight:700;height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.small{height:30px;padding:0 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select{font:inherit;height:38px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--ink);padding:0 8px}
+label.sel{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:10px;min-width:0}
+.card h2{font-family:var(--f-display);font-stretch:112%;font-weight:600;font-size:17px;margin:0}
+.msg{margin:0;font-size:14px}
+.msg.err{color:var(--err);font-weight:600}
+.msg.ok{color:var(--ok);font-weight:600}
+
+/* intake */
+.intake summary{cursor:pointer;font-family:var(--f-display);font-stretch:112%;font-weight:600;font-size:17px;list-style:none;display:flex;align-items:center;gap:8px}
+.intake summary::-webkit-details-marker{display:none}
+.intake summary::before{content:"+";font-family:var(--f-mono);width:22px;height:22px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:6px}
+.intake[open] summary::before{content:"−"}
+.intake .body{display:grid;gap:10px;margin-top:10px}
+textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);font-size:13px;line-height:1.45;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink)}
+.filebtn{position:relative}
+.filebtn input{position:absolute;width:1px;height:1px;opacity:0}
+.progress{display:grid;gap:6px}
+.progress .track{height:6px;border-radius:999px;background:var(--line);overflow:hidden}
+.progress .fill{height:100%;width:0;background:var(--accent);transition:width .25s}
+.progress .txt{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+
+/* summary */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.side-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.side-head b{font-family:var(--f-display);font-stretch:112%;font-weight:600;font-size:17px;overflow-wrap:anywhere}
+.acc{font-family:var(--f-mono);font-weight:700;font-size:24px;white-space:nowrap}
+.acc small{font-size:12px;color:var(--muted);font-weight:500;margin-left:4px;letter-spacing:.04em;text-transform:uppercase}
+.counts{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:2px 9px 2px 3px;border-radius:999px;border:1px solid var(--line);background:var(--bg)}
+.chip .n{font-family:var(--f-mono);font-weight:700}
+
+/* board */
+.main{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:20px;align-items:start}
+.boardcol{display:grid;gap:12px;min-width:0}
+.boardrow{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px}
+.evalbar{position:relative;border-radius:6px;overflow:hidden;background:var(--bar-black);border:1px solid var(--line)}
+.evalbar .w{position:absolute;left:0;right:0;bottom:0;height:50%;background:var(--bar-white);transition:height .45s cubic-bezier(.3,.7,.3,1)}
+.evalbar.flip .w{bottom:auto;top:0}
+.evalbar .lbl{position:absolute;left:0;right:0;text-align:center;font-family:var(--f-mono);font-weight:700;font-size:10.5px;padding:3px 0}
+.evalbar .lbl.top{top:0} .evalbar .lbl.bot{bottom:0}
+.evalbar .mid{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(128,128,128,.6)}
+.board{position:relative;aspect-ratio:1;width:100%;max-width:100%;border-radius:6px;overflow:hidden;box-shadow:0 1px 0 var(--line),0 8px 24px rgba(0,0,0,.12);
+  display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;-webkit-user-select:none;touch-action:none}
+.sq{position:relative}
+.sq.l{background-color:var(--sq-light)} .sq.d{background-color:var(--sq-dark)}
+.sq.hl::before,.sq.sel::before,.sq.chk::before,.sq.wrong::before,.sq.right::before{content:"";position:absolute;inset:0}
+.sq.hl::before{background:var(--hl)}
+.sq.sel::before{background:var(--sel)}
+.sq.chk::before{background:radial-gradient(circle,var(--check) 0%,transparent 72%)}
+.sq.wrong::before{background:var(--wrong)}
+.sq.right::before{background:var(--right)}
+.sq.hint{box-shadow:inset 0 0 0 4px var(--c-great)}
+.sq .pc{position:absolute;inset:0;background-size:88% 88%;background-position:center;background-repeat:no-repeat;z-index:1}
+.board.live .sq.mine .pc{cursor:grab}
+.sq.dragfrom .pc{opacity:.3}
+.sq .dot{position:absolute;inset:36%;border-radius:50%;background:var(--dot);z-index:2;pointer-events:none}
+.sq .ring{position:absolute;inset:3%;border-radius:50%;border:5px solid var(--dot);z-index:2;pointer-events:none}
+.sq .co{position:absolute;font-size:10px;font-weight:700;font-family:var(--f-mono);opacity:.75;z-index:1;pointer-events:none}
+.sq.l .co{color:var(--sq-dark)} .sq.d .co{color:var(--sq-light)}
+.co.r{left:3px;top:1px} .co.f{right:3px;bottom:0}
+.sq .badge{position:absolute;right:-6%;top:-6%;width:44%;height:44%;z-index:3;pointer-events:none}
+.arrows{position:absolute;inset:0;pointer-events:none;z-index:4;width:100%;height:100%}
+.ghost{position:fixed;pointer-events:none;z-index:50;background-size:contain;background-repeat:no-repeat;transform:translate(-50%,-50%)}
+.endcard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:15;width:min(86%,360px);background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 12px 32px rgba(0,0,0,.35);display:grid;gap:8px;text-align:center}
+.endcard b{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:22px}
+.endcard p{margin:0;font-size:14px;color:var(--muted);text-wrap:pretty}
+.endcard .row{justify-content:center}
+.sq.mated::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--c-inaccuracy)}
+.promo{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.45);display:grid;place-items:center}
+.promo div{display:flex;gap:6px;background:var(--surface);border-radius:10px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.promo button{width:64px;height:64px;border:1px solid var(--line);border-radius:8px;background-color:var(--sq-light);background-size:85%;background-position:center;background-repeat:no-repeat;cursor:pointer}
+.promo button:hover{border-color:var(--accent)}
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.controls button{font:inherit;font-family:var(--f-mono);font-weight:700;font-size:16px;min-width:56px;height:42px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.controls button.txt{font-family:var(--f-body);font-size:14px;padding:0 12px}
+.controls button:hover{border-color:var(--accent)}
+.controls button:focus-visible,.mv:focus-visible,.graph:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.controls button:disabled{opacity:.4;cursor:default}
+.graphwrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 10px 6px}
+.graphwrap .cap{font-size:12px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:0 4px 4px;display:flex;justify-content:space-between;gap:8px}
+.graph{display:block;width:100%;height:110px;cursor:pointer;touch-action:none}
+
+/* panel */
+.panel{display:grid;gap:12px;min-width:0}
+.mcard .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mcard .mvname{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:22px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;padding:3px 10px 3px 4px;border-radius:999px;color:#fff}
+.mcard .ev{margin-left:auto;font-family:var(--f-mono);font-weight:700;font-size:15px;padding:3px 8px;border-radius:6px;border:1px solid var(--line)}
+.mcard .note{margin:0;max-width:62ch}
+.mcard .sub{margin:0;font-size:14px;color:var(--muted)}
+.mcard .sub b{color:var(--ink);font-family:var(--f-mono)}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:10px;max-height:470px;overflow:auto}
+.list table{width:100%;border-collapse:collapse}
+.list td{padding:0;border-bottom:1px solid var(--line)}
+.list td.no{width:46px;text-align:right;padding-right:8px;color:var(--muted);font-family:var(--f-mono);font-size:13px;background:var(--bg)}
+.mv{display:flex;align-items:center;gap:7px;width:100%;border:0;background:none;color:var(--ink);font:inherit;font-family:var(--f-mono);font-weight:500;font-size:14px;padding:6px 10px;cursor:pointer;text-align:left}
+.mv:hover{background:var(--bg)}
+.mv.on{background:var(--accent);color:var(--on-accent)}
+.mv .ico{flex:none;width:18px;height:18px}
+.legend{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+
+/* game list */
+.ahead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.ahead-text{min-width:0;flex:1 1 320px}
+.ahead-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.games{gap:8px}
+.games-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.glist{display:grid;max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.grow{display:grid;grid-template-columns:76px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--surface)}
+.grow:last-child{border-bottom:0}
+.grow:hover{background:var(--bg)}
+.grow[aria-selected="true"]{background:var(--surface);box-shadow:inset 4px 0 0 var(--accent)}
+.grow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.grow .gd{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);line-height:1.3}
+.grow .gt{min-width:0}
+.grow .gt b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow .gt span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res{font-family:var(--f-mono);font-weight:700;font-size:12.5px;padding:2px 8px;border-radius:999px;color:#fff;white-space:nowrap}
+.res.w{background:var(--c-best)} .res.d{background:var(--c-good)} .res.l{background:var(--c-blunder)} .res.n{background:var(--c-pending)}
+.gs{font-size:12.5px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.gs .btn{height:30px;padding:0 10px;font-size:13px}
+.gs .acc1{font-family:var(--f-mono);font-weight:700;color:var(--ink)}
+.gempty{padding:14px;color:var(--muted);font-size:14px}
+@media (max-width:560px){.grow{grid-template-columns:minmax(0,1fr) auto;row-gap:4px}.grow .gd{grid-column:1/-1}.gs{grid-column:1/-1}}
+/* puzzles */
+.rating{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.rating .big{font-family:var(--f-mono);font-weight:700;font-size:44px;line-height:1}
+.rating .big small{font-size:14px;color:var(--muted);font-weight:500}
+.delta{font-family:var(--f-mono);font-weight:700;font-size:16px}
+.delta.up{color:var(--ok)} .delta.down{color:var(--err)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stat{background:var(--bg);border-radius:8px;padding:6px 8px}
+.stat b{display:block;font-family:var(--f-mono);font-size:18px}
+.stat span{font-size:12px;color:var(--muted)}
+.spark{width:100%;height:70px;display:block}
+.plog{display:grid;gap:2px;font-size:13.5px}
+.plog .eyebrow{margin:4px 0 2px}
+.plrow{display:grid;grid-template-columns:56px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
+.plrow .delta{font-size:13.5px}
+.pstatus{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.turnchip{width:22px;height:22px;border-radius:50%;border:2px solid var(--muted);flex:none}
+.turnchip.w{background:#f6f6f2} .turnchip.b{background:#2a2f2d}
+.prating{font-family:var(--f-mono);font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid var(--line)}
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.levels button{display:grid;gap:2px;text-align:left;padding:8px 10px;height:auto}
+.levels button small{font-weight:400;color:var(--muted)}
+
+/* play */
+.slider{display:grid;gap:6px}
+.slider input{width:100%;accent-color:var(--accent)}
+.slider .val{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.slider .val b{font-family:var(--f-mono);font-size:26px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-weight:700;border:0;background:var(--surface);color:var(--muted);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.players{display:grid;gap:6px}
+.player{display:flex;align-items:center;gap:8px;font-weight:700}
+.movetext{font-family:var(--f-mono);font-size:13.5px;line-height:1.7;max-height:220px;overflow:auto;background:var(--bg);border-radius:8px;padding:8px 10px;margin:0;overflow-wrap:anywhere}
+.movetext span.n{color:var(--muted)}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+
+footer{font-size:12.5px;color:var(--muted);max-width:86ch}
+.kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)} .list{max-height:340px}}
+@media (max-width:420px){.boardrow{grid-template-columns:20px minmax(0,1fr);gap:6px} .evalbar .lbl{font-size:8.5px} .controls button{min-width:0;flex:1} .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .promo button{width:52px;height:52px}}
+@media (prefers-reduced-motion:reduce){.evalbar .w,.progress .fill{transition:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="appbar">
+    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="3" fill="var(--sq-light)"/><rect x="2" y="2" width="10" height="10" rx="3" fill="var(--sq-dark)"/><rect x="12" y="12" width="10" height="10" rx="3" fill="var(--sq-dark)"/></svg>Sjakkverkstedet</div>
+    <nav class="tabs" aria-label="Seksjoner">
+      <a href="#analyse" data-tab="analyse">Analyse</a>
+      <a href="#notter" data-tab="notter">Sjakknøtter</a>
+      <a href="#spill" data-tab="spill">Spill mot bot</a>
+    </nav>
+  </div>
+
+  <!-- ============ ANALYSE ============ -->
+  <section class="tab" id="tab-analyse" hidden>
+    <header class="ahead">
+      <div class="ahead-text">
+        <p class="eyebrow" id="a-eyebrow">Partianalyse</p>
+        <h1 id="a-title">Laster …</h1>
+        <p id="a-sub"></p>
+        <div class="opening" id="a-opening" hidden><span class="eco"></span><span></span></div>
+      </div>
+      <div class="ahead-act">
+        <button class="btn primary" id="a-analyze" type="button">Analyser</button>
+        <label class="sel" for="a-depth">Dybde
+          <select id="a-depth"><option value="12">Rask (12)</option><option value="16" selected>Normal (16)</option><option value="20">Grundig (20)</option></select>
+        </label>
+      </div>
+    </header>
+    <section class="card games" aria-label="Mine partier">
+      <div class="games-head"><h2>Mine partier</h2><span class="hint" id="a-gcount"></span></div>
+      <div class="glist" id="a-games" role="listbox" aria-label="Velg parti"></div>
+    </section>
+    <details class="card intake" id="a-intake">
+      <summary>Legg til et parti med PGN</summary>
+      <div class="body">
+        <label for="a-pgn" class="hint">Lim inn PGN-en (på chess.com: <b>Del</b> → <b>PGN</b> → Kopier). Kommentarer, klokketider og varianter blir ignorert.</label>
+        <textarea id="a-pgn" spellcheck="false" placeholder='[White "Navn"]
+[Black "Navn"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 …'></textarea>
+        <div class="row">
+          <button class="btn primary" id="a-go" type="button">Legg til og analyser</button>
+          <label class="btn filebtn" for="a-file">Åpne .pgn-fil<input type="file" id="a-file" accept=".pgn,.txt,text/plain"></label>
+        </div>
+        <p class="msg" id="a-msg" role="status"></p>
+      </div>
+    </details>
+    <div class="progress" id="a-progress" hidden>
+      <div class="track"><div class="fill" id="a-pfill"></div></div>
+      <div class="txt"><span id="a-ptxt">Laster sjakkmotoren …</span><button class="btn small" id="a-stop" type="button">Stopp</button></div>
+    </div>
+    <section class="summary" id="a-summary" aria-label="Oppsummering"></section>
+    <section class="main">
+      <div class="boardcol">
+        <div class="boardrow">
+          <div class="evalbar" id="a-evalbar" aria-label="Evalueringsbar">
+            <div class="w" id="a-evalw"></div><div class="mid"></div>
+            <div class="lbl top" id="a-lbltop"></div><div class="lbl bot" id="a-lblbot"></div>
+          </div>
+          <div class="board" id="a-board" role="img" aria-label="Sjakkbrett"></div>
+        </div>
+        <div class="controls">
+          <button id="a-first" aria-label="Til start">|&lt;</button>
+          <button id="a-prev" aria-label="Forrige trekk">&lt;</button>
+          <button id="a-next" aria-label="Neste trekk">&gt;</button>
+          <button id="a-last" aria-label="Til slutt">&gt;|</button>
+          <button id="a-flip" class="txt">Snu brettet</button>
+        </div>
+        <div class="graphwrap">
+          <div class="cap"><span>Hvit leder ↑</span><span>Klikk for å hoppe til et trekk</span></div>
+          <svg class="graph" id="a-graph" tabindex="0" aria-label="Evalueringsgraf"></svg>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="card mcard" id="a-card" aria-live="polite"></div>
+        <div class="list"><table><tbody id="a-tbody"></tbody></table></div>
+        <div class="legend" id="a-legend"></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ NØTTER ============ -->
+  <section class="tab" id="tab-notter" hidden>
+    <header>
+      <p class="eyebrow">Sjakknøtter</p>
+      <h1>Finn det beste trekket</h1>
+      <p>Nøttene tilpasser seg ratingen din. Løser du dem, blir de gradvis vanskeligere.</p>
+    </header>
+    <section class="main">
+      <div class="boardcol">
+        <div class="board" id="p-board" role="img" aria-label="Sjakkbrett for nøtter"></div>
+        <div class="controls">
+          <button id="p-hint" class="txt">Hint</button>
+          <button id="p-solution" class="txt">Vis løsning</button>
+          <button id="p-next" class="txt">Neste nøtt</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="card" id="p-start" hidden>
+          <h2>Hvor sterk er du?</h2>
+          <p class="hint">Velg et startnivå. Ratingen justeres automatisk etter hver nøtt.</p>
+          <div class="levels">
+            <button class="btn" data-level="800">Nybegynner<small>start 800</small></button>
+            <button class="btn" data-level="1200">Hobbyspiller<small>start 1200</small></button>
+            <button class="btn" data-level="1600">Klubbspiller<small>start 1600</small></button>
+            <button class="btn" data-level="2000">Sterk<small>start 2000</small></button>
+          </div>
+        </div>
+        <div class="card" id="p-puzzle">
+          <div class="row" style="justify-content:space-between">
+            <div class="pstatus"><span class="turnchip" id="p-turn"></span><span id="p-status">Laster nøtter …</span></div>
+            <span class="prating" id="p-prating" title="Nøttens rating">–</span>
+          </div>
+          <p class="msg" id="p-msg" role="status"></p>
+        </div>
+        <div class="card">
+          <div class="rating">
+            <div><p class="eyebrow">Din nøtterating</p><div class="big" id="p-rating">–</div></div>
+            <div class="delta" id="p-delta"></div>
+          </div>
+          <svg class="spark" id="p-spark" aria-label="Ratingutvikling"></svg>
+          <div class="stats">
+            <div class="stat"><b id="p-solved">0</b><span>Løst</span></div>
+            <div class="stat"><b id="p-failed">0</b><span>Ikke løst</span></div>
+            <div class="stat"><b id="p-streak">0</b><span>På rad</span></div>
+            <div class="stat"><b id="p-best">–</b><span>Beste rating</span></div>
+          </div>
+          <div class="plog" id="p-log"></div>
+          <p class="hint">Løser du en nøtt, går ratingen opp. Bommer du, går den ned med omtrent halvparten så mye. Hvor mye avhenger av nøttens rating: en vanskelig nøtt gir mer når du løser den, og en lett nøtt koster mer når du bommer.</p>
+          <p class="hint" id="p-store"></p>
+          <div class="confirm" id="p-resetrow"><button class="btn small" id="p-reset" type="button">Nullstill rating</button></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ SPILL ============ -->
+  <section class="tab" id="tab-spill" hidden>
+    <header>
+      <p class="eyebrow">Spill mot bot</p>
+      <h1 id="g-title">Stockfish</h1>
+      <p id="g-sub">Velg styrke og farge, og start et parti.</p>
+      <div class="opening" id="g-opening" hidden><span class="eco"></span><span></span></div>
+    </header>
+    <section class="main">
+      <div class="boardcol">
+        <div class="board" id="g-board" role="img" aria-label="Sjakkbrett for parti mot bot"></div>
+        <div class="controls">
+          <button id="g-undo" class="txt">Angre trekk</button>
+          <button id="g-resign" class="txt">Gi opp</button>
+          <button id="g-flip" class="txt">Snu brettet</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="card">
+          <h2>Nytt parti</h2>
+          <div class="slider">
+            <div class="val"><label for="g-rating">Botens styrke</label><b id="g-ratingval">1500</b></div>
+            <input type="range" id="g-rating" min="600" max="2800" step="100" value="1500">
+            <p class="hint" id="g-ratingdesc"></p>
+          </div>
+          <div class="row">
+            <span class="hint">Du spiller</span>
+            <div class="seg" role="group" aria-label="Farge">
+              <button type="button" data-color="w" aria-pressed="true">Hvit</button>
+              <button type="button" data-color="b" aria-pressed="false">Svart</button>
+              <button type="button" data-color="r" aria-pressed="false">Tilfeldig</button>
+            </div>
+          </div>
+          <div class="row"><button class="btn primary" id="g-new" type="button">Start nytt parti</button></div>
+          <p class="hint" id="g-record"></p>
+        </div>
+        <div class="card">
+          <div class="pstatus"><span class="turnchip" id="g-turn"></span><span id="g-status">Ingen parti i gang</span></div>
+          <p class="msg" id="g-msg" role="status"></p>
+          <pre class="movetext" id="g-moves"></pre>
+          <div class="row" id="g-after" hidden><button class="btn primary" id="g-analyse" type="button">Analyser partiet</button></div>
+          <div class="confirm" id="g-confirm" hidden><span>Vil du gi opp partiet?</span><button class="btn small" id="g-yes" type="button">Ja, gi opp</button><button class="btn small" id="g-no" type="button">Fortsett</button></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <footer id="footer">Bruk <span class="kbd">←</span> og <span class="kbd">→</span> for å bla i analysen. Trekkene merkes etter hvor mye vinnersjansen endrer seg, slik chess.com gjør. Motor: Stockfish 10 i nettleseren din (GPL). Åpninger: lichess-org/chess-openings. Nøtter: Lichess' åpne nøttedatabase (CC0), 24 595 nøtter fra 400 til 3166 i rating. Botens rating er omtrentlig. Brikker: cburnett.</footer>
+</div>
+
+<script src="chess.js"></script>
+<script>
+const EX = {"pgn": "[Event \"Bot-parti på chess.com\"]\n[White \"Hvit (du)\"]\n[Black \"Maria-bot\"]\n[BlackElo \"1000\"]\n[Result \"1-0\"]\n[Opening \"Lion-forsvar\"]\n\n1. e4 d6 2. d4 Nf6 3. Nc3 Nbd7 4. Nf3 Rg8 5. Bc4 e5 6. Bxf7+ Kxf7 7. Ng5+ Ke8 8. Ne6 Qe7 9. Nxc7+ Kd8 10. Nxa8 Qf7 11. O-O Qc4 12. Qd3 Qxd3 13. cxd3 b5 14. Nxb5 a6 15. Nbc7 g5 16. Be3 d5 17. exd5 Ke7 18. Rac1 Nxd5 19. Nxd5+ Kd6 20. Ndc7 Nf6 21. dxe5+ Kxe5 22. d4+ Kf5 23. h3 h6 24. g4+ Ke4 25. Rfe1 Nxg4 26. hxg4 Kf3 27. Rc3 a5 28. Bxg5+ Kxg4 29. Be3 Kh3+ 30. Kf1 Bb4 31. Bd2+ Bxc3 32. Bxc3 Rf8 33. Re3+ Kh4 34. Kg2 Rg8+ 35. Kh2 Rd8 36. Ne6 Bxe6 37. Rxe6 Rxa8 38. d5 a4 39. d6 Kg4 40. d7 Kh5 41. Re8 Kg5 42. Rxa8 Kf5 43. d8=Q a3 44. Ra5+ Kf4 45. Qf6+ Kg4 46. Ra4+ Kh5 47. Rh4# 1-0", "start": {"cp": 81, "mate": null}, "res": [{"cls": "book", "ev": {"cp": -6, "mate": null}, "best": "e4", "bu": "e2e4", "loss": 0, "note": ""}, {"cls": "book", "ev": {"cp": 112, "mate": null}, "best": "e6", "bu": "e7e6", "loss": 10.7, "note": ""}, {"cls": "book", "ev": {"cp": 43, "mate": null}, "best": "d4", "bu": "d2d4", "loss": 0, "note": ""}, {"cls": "book", "ev": {"cp": 95, "mate": null}, "best": "Nd7", "bu": "b8d7", "loss": 0.2, "note": ""}, {"cls": "book", "ev": {"cp": 34, "mate": null}, "best": "Nd2", "bu": "b1d2", "loss": 0.1, "note": ""}, {"cls": "book", "ev": {"cp": 78, "mate": null}, "best": "g6", "bu": "g7g6", "loss": 0.3, "note": ""}, {"cls": "excellent", "ev": {"cp": 30, "mate": null}, "best": "Be2", "bu": "f1e2", "loss": 1.1, "note": ""}, {"cls": "blunder", "ev": {"cp": 337, "mate": null}, "best": "e5", "bu": "e7e5", "loss": 24.8, "note": "Et uvanlig tårntrekk. Tårnet forlater forsvaret av f7 og står passivt på g8. 4...e5 var naturlig."}, {"cls": "inaccuracy", "ev": {"cp": 200, "mate": null}, "best": "e5", "bu": "e4e5", "loss": 7.3, "note": "Løperen sikter mot det svake f7-feltet, men 5.e5! var enda sterkere og jager springeren på f6."}, {"cls": "blunder", "ev": {"cp": 615, "mate": null}, "best": "e6", "bu": "e7e6", "loss": 23.0, "note": "Svart åpner sentrum mens kongen står i midten og f7 er svakt. Nå hadde hvit 6.Ng5! med et svært sterkt angrep (rundt +6)."}, {"cls": "mistake", "ev": {"cp": 253, "mate": null}, "best": "Ng5", "bu": "f3g5", "loss": 18.8, "note": "Det fristende løperofferet. Det fungerte i partiet, men 6.Ng5! først var langt sterkere. Etter Bxf7+ er hvit fortsatt bedre, men fordelen krymper fra rundt +6 til +2,5."}, {"cls": "best", "ev": {"cp": 330, "mate": null}, "best": "Kxf7", "bu": "e8f7", "loss": 0, "note": "Svart tar imot offeret. Det eneste fornuftige."}, {"cls": "blunder", "ev": {"cp": -114, "mate": null}, "best": "dxe5", "bu": "d4e5", "loss": 34.4, "note": "Naturlig oppfølging, men her var 7.dxe5 riktig. Etter Ng5+ kunne svart svart med 7...Ke7! og stått bedre."}, {"cls": "blunder", "ev": {"cp": 333, "mate": null}, "best": "Ke7", "bu": "f7e7", "loss": 31.2, "note": "Partiets avgjørende feil. Kongen går tilbake til e8, og da kommer Ne6 med angrep på dronningen og gaffeltrusselen Nxc7+. 7...Ke7 holdt stillingen."}, {"cls": "great", "ev": {"cp": 259, "mate": null}, "best": "Ne6", "bu": "g5e6", "loss": 0, "note": "Det eneste trekket som holder fordelen. Springeren angriper dronningen og truer Nxc7+ med gaffel mot konge og tårn."}, {"cls": "great", "ev": {"cp": 323, "mate": null}, "best": "Qe7", "bu": "d8e7", "loss": 0, "note": "Svarts beste forsvar, men gaffelen på c7 kan ikke stoppes."}, {"cls": "best", "ev": {"cp": 280, "mate": null}, "best": "Nxc7+", "bu": "e6c7", "loss": 0, "note": "Gaffel mot kongen på e8 og tårnet på a8."}, {"cls": "best", "ev": {"cp": 300, "mate": null}, "best": "Kd8", "bu": "e8d8", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 237, "mate": null}, "best": "dxe5", "bu": "d4e5", "loss": 0.1, "note": "Tårnet er vunnet. Springeren på a8 står litt innestengt, men hvit leder klart."}, {"cls": "mistake", "ev": {"cp": 496, "mate": null}, "best": "b6", "bu": "b7b6", "loss": 15.6, "note": "Bedre var 10...b6, som stenger springeren på a8 inne slik at den kan vinnes senere."}, {"cls": "mistake", "ev": {"cp": 313, "mate": null}, "best": "a4", "bu": "a2a4", "loss": 10.1, "note": "Kongen kommer i sikkerhet, men 11.a4 for å forberede redning av springeren på a8 var mer presist."}, {"cls": "inaccuracy", "ev": {"cp": 501, "mate": null}, "best": "b6", "bu": "b7b6", "loss": 9.7, "note": ""}, {"cls": "inaccuracy", "ev": {"cp": 393, "mate": null}, "best": "dxe5", "bu": "d4e5", "loss": 5.4, "note": "Å tilby dronningbytte er en god praktisk regel når man leder i materiale. Motoren foretrakk likevel 12.dxe5."}, {"cls": "best", "ev": {"cp": 438, "mate": null}, "best": "Qxd3", "bu": "c4d3", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": 398, "mate": null}, "best": "cxd3", "bu": "c2d3", "loss": 0, "note": "Etter dronningbyttet er svarts angrepsmuligheter borte."}, {"cls": "inaccuracy", "ev": {"cp": 610, "mate": null}, "best": "b6", "bu": "b7b6", "loss": 9.2, "note": "Bonden på b5 går tapt for ingenting."}, {"cls": "best", "ev": {"cp": 594, "mate": null}, "best": "Nxb5", "bu": "c3b5", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 622, "mate": null}, "best": "d5", "bu": "d6d5", "loss": 0.1, "note": ""}, {"cls": "best", "ev": {"cp": 606, "mate": null}, "best": "Nbc7", "bu": "b5c7", "loss": 0, "note": "Springerne på a8 og c7 beskytter hverandre, så ingen av dem kan vinnes."}, {"cls": "good", "ev": {"cp": 801, "mate": null}, "best": "exd4", "bu": "e5d4", "loss": 4.7, "note": ""}, {"cls": "good", "ev": {"cp": 650, "mate": null}, "best": "Bxg5", "bu": "c1g5", "loss": 2.0, "note": ""}, {"cls": "good", "ev": {"cp": 772, "mate": null}, "best": "Ke7", "bu": "d8e7", "loss": 2.9, "note": ""}, {"cls": "good", "ev": {"cp": 633, "mate": null}, "best": "Rac1", "bu": "a1c1", "loss": 3.4, "note": ""}, {"cls": "good", "ev": {"cp": 809, "mate": null}, "best": "Bd6", "bu": "f8d6", "loss": 4.0, "note": ""}, {"cls": "good", "ev": {"cp": 666, "mate": null}, "best": "dxe5", "bu": "d4e5", "loss": 3.1, "note": ""}, {"cls": "inaccuracy", "ev": {"cp": 1286, "mate": null}, "best": "exd4", "bu": "e5d4", "loss": 7.1, "note": "Springeren slår på d5, men står ubeskyttet der. Hvit vinner en hel offiser."}, {"cls": "best", "ev": {"cp": 1344, "mate": null}, "best": "Nxd5+", "bu": "c7d5", "loss": 0, "note": "Vinner springeren med sjakk."}, {"cls": "excellent", "ev": {"cp": 1454, "mate": null}, "best": "Kd8", "bu": "e7d8", "loss": 0.1, "note": ""}, {"cls": "excellent", "ev": {"cp": 1108, "mate": null}, "best": "Rxc8", "bu": "c1c8", "loss": 1.2, "note": ""}, {"cls": "excellent", "ev": {"cp": 1670, "mate": null}, "best": "Bb7", "bu": "c8b7", "loss": 1.4, "note": ""}, {"cls": "best", "ev": {"cp": 1690, "mate": null}, "best": "dxe5+", "bu": "d4e5", "loss": 0, "note": "Bondeslag med sjakk som jager kongen ut i brettet."}, {"cls": "excellent", "ev": {"cp": 1951, "mate": null}, "best": "Ke7", "bu": "d6e7", "loss": 0.1, "note": ""}, {"cls": "good", "ev": {"cp": 1043, "mate": null}, "best": "f4+", "bu": "f2f4", "loss": 2.0, "note": ""}, {"cls": "best", "ev": {"cp": 1078, "mate": null}, "best": "Kf5", "bu": "e5f5", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 987, "mate": null}, "best": "Rc6", "bu": "c1c6", "loss": 0.7, "note": ""}, {"cls": "excellent", "ev": {"cp": 1090, "mate": null}, "best": "Bb7", "bu": "c8b7", "loss": 0.8, "note": ""}, {"cls": "excellent", "ev": {"cp": 1044, "mate": null}, "best": "Rc6", "bu": "c1c6", "loss": 0.1, "note": "Kongen jages videre mot hvits brikker."}, {"cls": "excellent", "ev": {"cp": 1729, "mate": null}, "best": "Kg6", "bu": "f5g6", "loss": 1.9, "note": ""}, {"cls": "excellent", "ev": {"cp": 1356, "mate": null}, "best": "Rc3", "bu": "c1c3", "loss": 0.5, "note": ""}, {"cls": "excellent", "ev": {"cp": 1821, "mate": null}, "best": "Bxg4", "bu": "c8g4", "loss": 0.5, "note": "Svart gir en springer for en bonde. Stillingen var uansett tapt."}, {"cls": "excellent", "ev": {"cp": 1391, "mate": null}, "best": "Bd2+", "bu": "e3d2", "loss": 0.5, "note": ""}, {"cls": "best", "ev": {"cp": 1479, "mate": null}, "best": "Kf3", "bu": "e4f3", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 1116, "mate": null}, "best": "Bd2", "bu": "e3d2", "loss": 1.2, "note": ""}, {"cls": "excellent", "ev": {"cp": 1840, "mate": null}, "best": "Bb4", "bu": "f8b4", "loss": 1.5, "note": ""}, {"cls": "excellent", "ev": {"cp": 1406, "mate": null}, "best": "Bd2+", "bu": "e3d2", "loss": 0.5, "note": "Avdekket sjakk fra tårnet på c3 vinner g5-bonden."}, {"cls": "forced", "ev": {"cp": 1438, "mate": null}, "best": "Kxg4", "bu": "f3g4", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 1187, "mate": null}, "best": "Rg3+", "bu": "c3g3", "loss": 0.7, "note": ""}, {"cls": "excellent", "ev": {"cp": 1408, "mate": null}, "best": "Kf5+", "bu": "g4f5", "loss": 0.7, "note": ""}, {"cls": "excellent", "ev": {"cp": 1214, "mate": null}, "best": "Bg5+", "bu": "e3g5", "loss": 0.4, "note": ""}, {"cls": "best", "ev": {"cp": 1282, "mate": null}, "best": "Bb4", "bu": "f8b4", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 1183, "mate": null}, "best": "Ke2", "bu": "f1e2", "loss": 0.4, "note": "Avdekket sjakk, men svart kan slå tårnet på c3 som gir sjakken. 31.Ke2 var mer presist. Fordelen er fortsatt avgjørende."}, {"cls": "best", "ev": {"cp": 1219, "mate": null}, "best": "Bxc3", "bu": "b4c3", "loss": 0, "note": "Svart slår brikken som gir sjakk, og vinner en kvalitet."}, {"cls": "excellent", "ev": {"cp": 1157, "mate": null}, "best": "bxc3", "bu": "b2c3", "loss": 0.2, "note": ""}, {"cls": "excellent", "ev": {"cp": 1248, "mate": null}, "best": "Rg6", "bu": "g8g6", "loss": 0.4, "note": ""}, {"cls": "excellent", "ev": {"cp": 1193, "mate": null}, "best": "Nb6", "bu": "a8b6", "loss": 0.0, "note": ""}, {"cls": "best", "ev": {"cp": 1253, "mate": null}, "best": "Kh4", "bu": "h3h4", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 1179, "mate": null}, "best": "Nb6", "bu": "a8b6", "loss": 0.3, "note": ""}, {"cls": "excellent", "ev": {"cp": 1452, "mate": null}, "best": "Rf7", "bu": "f8f7", "loss": 0.8, "note": ""}, {"cls": "excellent", "ev": {"cp": 1190, "mate": null}, "best": "Rg3", "bu": "e3g3", "loss": 0.7, "note": ""}, {"cls": "excellent", "ev": {"cp": 1480, "mate": null}, "best": "Rf8", "bu": "g8f8", "loss": 0.8, "note": ""}, {"cls": "excellent", "ev": {"cp": 1160, "mate": null}, "best": "Nb6", "bu": "a8b6", "loss": 0.9, "note": "Springeren tilbys for å bytte av svarts siste løper."}, {"cls": "best", "ev": {"cp": 1136, "mate": null}, "best": "Bxe6", "bu": "c8e6", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": 1164, "mate": null}, "best": "Rxe6", "bu": "e3e6", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 1231, "mate": null}, "best": "Rf8", "bu": "d8f8", "loss": 0.1, "note": ""}, {"cls": "best", "ev": {"cp": 1234, "mate": null}, "best": "d5", "bu": "d4d5", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": 6088, "mate": null}, "best": "Kg5", "bu": "h4g5", "loss": 0.2, "note": "Svart tar ikke vare på d-bonden lenger, og den går helt inn."}, {"cls": "excellent", "ev": {"cp": 5799, "mate": null}, "best": "Bd2", "bu": "c3d2", "loss": 0.0, "note": ""}, {"cls": "excellent", "ev": {"cp": 6098, "mate": null}, "best": "Ra7", "bu": "a8a7", "loss": 0.0, "note": ""}, {"cls": "excellent", "ev": {"cp": 6103, "mate": null}, "best": "Rf6", "bu": "e6f6", "loss": 0.0, "note": ""}, {"cls": "excellent", "ev": {"cp": null, "mate": 7}, "best": "Rd8", "bu": "a8d8", "loss": 0.0, "note": ""}, {"cls": "best", "ev": {"cp": null, "mate": 6}, "best": "Re8", "bu": "e6e8", "loss": 0, "note": "Tårnet dekker d8. Etter ...Rxe8 kommer dxe8=Q."}, {"cls": "excellent", "ev": {"cp": null, "mate": 5}, "best": "Rd8", "bu": "a8d8", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": null, "mate": 4}, "best": "Rxa8", "bu": "e8a8", "loss": 0, "note": "Hvit vinner svarts siste tårn."}, {"cls": "excellent", "ev": {"cp": null, "mate": 4}, "best": "a3", "bu": "a4a3", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": null, "mate": 3}, "best": "d8=Q", "bu": "d7d8q", "loss": 0, "note": "Bonden blir dronning."}, {"cls": "best", "ev": {"cp": null, "mate": 3}, "best": "a3", "bu": "a4a3", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": null, "mate": 2}, "best": "Qd5+", "bu": "d8d5", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": null, "mate": 2}, "best": "Ke4", "bu": "f5e4", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": null, "mate": 1}, "best": "Qf6+", "bu": "d8f6", "loss": 0, "note": "Dronningen tar fra kongen alle flukter på f-linjen og diagonalen."}, {"cls": "best", "ev": {"cp": null, "mate": 1}, "best": "Kg4", "bu": "f4g4", "loss": 0, "note": ""}, {"cls": "excellent", "ev": {"cp": null, "mate": 1}, "best": "f3#", "bu": "f2f3", "loss": 0, "note": "Fører til matt i to. 46.f3 var faktisk matt med én gang."}, {"cls": "forced", "ev": {"cp": null, "mate": 1}, "best": "Kh5", "bu": "g4h5", "loss": 0, "note": ""}, {"cls": "best", "ev": {"cp": null, "mate": 0, "winner": "w"}, "best": "Rh4#", "bu": "a4h4", "loss": 0, "note": "Sjakkmatt. Kongen på h5 har ingen felter: dronningen dekker g5 og g6, tårnet dekker g4 og h-linjen."}], "depth": 21};
+const PIECES = {"wpawn": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDQgMCAuODkuMjkgMS43MS43OCAyLjM4QzE3LjMzIDE2LjUgMTYgMTguNTkgMTYgMjFjMCAyLjAzLjk0IDMuODQgMi40MSA1LjAzLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3IDEuNDctMS4xOSAyLjQxLTMgMi40MS01LjAzIDAtMi40MS0xLjMzLTQuNS0zLjI4LTUuNjIuNDktLjY3Ljc4LTEuNDkuNzgtMi4zOCAwLTIuMjEtMS43OS00LTQtNHoiIGZpbGw9IiNmZmYiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==", "wbishop": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIGZpbGw9IiNmZmYiIHN0cm9rZS1saW5lY2FwPSJidXR0Ij48cGF0aCBkPSJNOSAzNmMzLjM5LS45NyAxMC4xMS40MyAxMy41LTIgMy4zOSAyLjQzIDEwLjExIDEuMDMgMTMuNSAyIDAgMCAxLjY1LjU0IDMgMi0uNjguOTctMS42NS45OS0zIC41LTMuMzktLjk3LTEwLjExLjQ2LTEzLjUtMS0zLjM5IDEuNDYtMTAuMTEuMDMtMTMuNSAxLTEuMzU0LjQ5LTIuMzIzLjQ3LTMtLjUgMS4zNTQtMS45NCAzLTIgMy0yeiIvPjxwYXRoIGQ9Ik0xNSAzMmMyLjUgMi41IDEyLjUgMi41IDE1IDAgLjUtMS41IDAtMiAwLTIgMC0yLjUtMi41LTQtMi41LTQgNS41LTEuNSA2LTExLjUtNS0xNS41LTExIDQtMTAuNSAxNC01IDE1LjUgMCAwLTIuNSAxLjUtMi41IDQgMCAwLS41LjUgMCAyeiIvPjxwYXRoIGQ9Ik0yNSA4YTIuNSAyLjUgMCAxIDEtNSAwIDIuNSAyLjUgMCAxIDEgNSAweiIvPjwvZz48cGF0aCBkPSJNMTcuNSAyNmgxME0xNSAzMGgxNW0tNy41LTE0LjV2NU0yMCAxOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PC9nPjwvc3ZnPg==", "wknight": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQyLS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQuMDAzIDEtNC00IDAtMiA2LTEyIDYtMTJzMS44OS0xLjkgMi0zLjVjLS43My0uOTk0LS41LTItLjUtMyAxLTEgMyAyLjUgMyAyLjVoMnMuNzgtMS45OTIgMi41LTNjMSAwIDEgMyAxIDMiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDB6bTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjV6IiBmaWxsPSIjMDAwIi8+PC9nPjwvc3ZnPg==", "wrook": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik05IDM5aDI3di0zSDl2M3ptMy0zdi00aDIxdjRIMTJ6bS0xLTIyVjloNHYyaDVWOWg1djJoNVY5aDR2NSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNMzQgMTRsLTMgM0gxNGwtMy0zIi8+PHBhdGggZD0iTTMxIDE3djEyLjVIMTRWMTciIHN0cm9rZS1saW5lY2FwPSJidXR0IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTMxIDI5LjVsMS41IDIuNWgtMjBsMS41LTIuNSIvPjxwYXRoIGQ9Ik0xMSAxNGgyMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjwvZz48L3N2Zz4=", "wqueen": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0iI2ZmZiIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik04IDEyYTIgMiAwIDEgMS00IDAgMiAyIDAgMSAxIDQgMHptMTYuNS00LjVhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAwek00MSAxMmEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTE2IDguNWEyIDIgMCAxIDEtNCAwIDIgMiAwIDEgMSA0IDB6TTMzIDlhMiAyIDAgMSAxLTQgMCAyIDIgMCAxIDEgNCAweiIvPjxwYXRoIGQ9Ik05IDI2YzguNS0xLjUgMjEtMS41IDI3IDBsMi0xMi03IDExVjExbC01LjUgMTMuNS0zLTE1LTMgMTUtNS41LTE0VjI1TDcgMTRsMiAxMnoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTkgMjZjMCAyIDEuNSAyIDIuNSA0IDEgMS41IDEgMSAuNSAzLjUtMS41IDEtMS41IDIuNS0xLjUgMi41LTEuNSAxLjUuNSAyLjUuNSAyLjUgNi41IDEgMTYuNSAxIDIzIDAgMCAwIDEuNS0xIDAtMi41IDAgMCAuNS0xLjUtMS0yLjUtLjUtMi41LS41LTIgLjUtMy41IDEtMiAyLjUtMiAyLjUtNC04LjUtMS41LTE4LjUtMS41LTI3IDB6IiBzdHJva2UtbGluZWNhcD0iYnV0dCIvPjxwYXRoIGQ9Ik0xMS41IDMwYzMuNS0xIDE4LjUtMSAyMiAwTTEyIDMzLjVjNi0xIDE1LTEgMjEgMCIgZmlsbD0ibm9uZSIvPjwvZz48L3N2Zz4=", "wking": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjZNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTIyLjUgMjVzNC41LTcuNSAzLTEwLjVjMCAwLTEtMi41LTMtMi41cy0zIDIuNS0zIDIuNWMtMS41IDMgMyAxMC41IDMgMTAuNSIgZmlsbD0iI2ZmZiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMTEuNSAzN2M1LjUgMy41IDE1LjUgMy41IDIxIDB2LTdzOS00LjUgNi0xMC41Yy00LTYuNS0xMy41LTMuNS0xNiA0VjI3di0zLjVjLTMuNS03LjUtMTMtMTAuNS0xNi00LTMgNiA1IDEwIDUgMTBWMzd6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTExLjUgMzBjNS41LTMgMTUuNS0zIDIxIDBtLTIxIDMuNWM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwIi8+PC9nPjwvc3ZnPg==", "bpawn": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDQgMCAuODkuMjkgMS43MS43OCAyLjM4QzE3LjMzIDE2LjUgMTYgMTguNTkgMTYgMjFjMCAyLjAzLjk0IDMuODQgMi40MSA1LjAzLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3IDEuNDctMS4xOSAyLjQxLTMgMi40MS01LjAzIDAtMi40MS0xLjMzLTQuNS0zLjI4LTUuNjIuNDktLjY3Ljc4LTEuNDkuNzgtMi4zOCAwLTIuMjEtMS43OS00LTQtNHoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==", "bbishop": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIGZpbGw9IiMwMDAiIHN0cm9rZS1saW5lY2FwPSJidXR0Ij48cGF0aCBkPSJNOSAzNmMzLjM5LS45NyAxMC4xMS40MyAxMy41LTIgMy4zOSAyLjQzIDEwLjExIDEuMDMgMTMuNSAyIDAgMCAxLjY1LjU0IDMgMi0uNjguOTctMS42NS45OS0zIC41LTMuMzktLjk3LTEwLjExLjQ2LTEzLjUtMS0zLjM5IDEuNDYtMTAuMTEuMDMtMTMuNSAxLTEuMzU0LjQ5LTIuMzIzLjQ3LTMtLjUgMS4zNTQtMS45NCAzLTIgMy0yeiIvPjxwYXRoIGQ9Ik0xNSAzMmMyLjUgMi41IDEyLjUgMi41IDE1IDAgLjUtMS41IDAtMiAwLTIgMC0yLjUtMi41LTQtMi41LTQgNS41LTEuNSA2LTExLjUtNS0xNS41LTExIDQtMTAuNSAxNC01IDE1LjUgMCAwLTIuNSAxLjUtMi41IDQgMCAwLS41LjUgMCAyeiIvPjxwYXRoIGQ9Ik0yNSA4YTIuNSAyLjUgMCAxIDEtNSAwIDIuNSAyLjUgMCAxIDEgNSAweiIvPjwvZz48cGF0aCBkPSJNMTcuNSAyNmgxME0xNSAzMGgxNW0tNy41LTE0LjV2NU0yMCAxOGg1IiBzdHJva2U9IiNlY2VjZWMiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48L2c+PC9zdmc+", "bknight": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQyLS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQuMDAzIDEtNC00IDAtMiA2LTEyIDYtMTJzMS44OS0xLjkgMi0zLjVjLS43My0uOTk0LS41LTItLjUtMyAxLTEgMyAyLjUgMyAyLjVoMnMuNzgtMS45OTIgMi41LTNjMSAwIDEgMyAxIDMiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDB6bTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjV6IiBmaWxsPSIjZWNlY2VjIiBzdHJva2U9IiNlY2VjZWMiLz48cGF0aCBkPSJNMjQuNTUgMTAuNGwtLjQ1IDEuNDUuNS4xNWMzLjE1IDEgNS42NSAyLjQ5IDcuOSA2Ljc1UzM1Ljc1IDI5LjA2IDM1LjI1IDM5bC0uMDUuNWgyLjI1bC4wNS0uNWMuNS0xMC4wNi0uODgtMTYuODUtMy4yNS0yMS4zNC0yLjM3LTQuNDktNS43OS02LjY0LTkuMTktNy4xNmwtLjUxLS4xeiIgZmlsbD0iI2VjZWNlYyIgc3Ryb2tlPSJub25lIi8+PC9nPjwvc3ZnPg==", "brook": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik05IDM5aDI3di0zSDl2M3ptMy41LTdsMS41LTIuNWgxN2wxLjUgMi41aC0yMHptLS41IDR2LTRoMjF2NEgxMnoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTE0IDI5LjV2LTEzaDE3djEzSDE0eiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMTQgMTYuNUwxMSAxNGgyM2wtMyAyLjVIMTR6TTExIDE0VjloNHYyaDVWOWg1djJoNVY5aDR2NUgxMXoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTEyIDM1LjVoMjFtLTIwLTRoMTltLTE4LTJoMTdtLTE3LTEzaDE3TTExIDE0aDIzIiBmaWxsPSJub25lIiBzdHJva2U9IiNlY2VjZWMiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjwvZz48L3N2Zz4=", "bqueen": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIHN0cm9rZT0ibm9uZSI+PGNpcmNsZSBjeD0iNiIgY3k9IjEyIiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMTQiIGN5PSI5IiByPSIyLjc1Ii8+PGNpcmNsZSBjeD0iMjIuNSIgY3k9IjgiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzMSIgY3k9IjkiIHI9IjIuNzUiLz48Y2lyY2xlIGN4PSIzOSIgY3k9IjEyIiByPSIyLjc1Ii8+PC9nPjxwYXRoIGQ9Ik05IDI2YzguNS0xLjUgMjEtMS41IDI3IDBsMi41LTEyLjVMMzEgMjVsLS4zLTE0LjEtNS4yIDEzLjYtMy0xNC41LTMgMTQuNS01LjItMTMuNkwxNCAyNSA2LjUgMTMuNSA5IDI2eiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNOSAyNmMwIDIgMS41IDIgMi41IDQgMSAxLjUgMSAxIC41IDMuNS0xLjUgMS0xLjUgMi41LTEuNSAyLjUtMS41IDEuNS41IDIuNS41IDIuNSA2LjUgMSAxNi41IDEgMjMgMCAwIDAgMS41LTEgMC0yLjUgMCAwIC41LTEuNS0xLTIuNS0uNS0yLjUtLjUtMiAuNS0zLjUgMS0yIDIuNS0yIDIuNS00LTguNS0xLjUtMTguNS0xLjUtMjcgMHoiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHBhdGggZD0iTTExIDM4LjVhMzUgMzUgMSAwIDAgMjMgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cGF0aCBkPSJNMTEgMjlhMzUgMzUgMSAwIDEgMjMgMG0tMjEuNSAyLjVoMjBtLTIxIDNhMzUgMzUgMSAwIDAgMjIgMG0tMjMgM2EzNSAzNSAxIDAgMCAyNCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNlY2VjZWMiLz48L2c+PC9zdmc+", "bking": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjYiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMjIuNSAyNXM0LjUtNy41IDMtMTAuNWMwIDAtMS0yLjUtMy0yLjVzLTMgMi41LTMgMi41Yy0xLjUgMyAzIDEwLjUgMyAxMC41IiBmaWxsPSIjMDAwIiBzdHJva2UtbGluZWNhcD0iYnV0dCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIvPjxwYXRoIGQ9Ik0xMS41IDM3YzUuNSAzLjUgMTUuNSAzLjUgMjEgMHYtN3M5LTQuNSA2LTEwLjVjLTQtNi41LTEzLjUtMy41LTE2IDRWMjd2LTMuNWMtMy41LTcuNS0xMy0xMC41LTE2LTQtMyA2IDUgMTAgNSAxMFYzN3oiIGZpbGw9IiMwMDAiLz48cGF0aCBkPSJNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTMyIDI5LjVzOC41LTQgNi4wMy05LjY1QzM0LjE1IDE0IDI1IDE4IDIyLjUgMjQuNWwuMDEgMi4xLS4wMS0yLjFDMjAgMTggOS45MDYgMTQgNi45OTcgMTkuODVjLTIuNDk3IDUuNjUgNC44NTMgOSA0Ljg1MyA5IiBzdHJva2U9IiNlY2VjZWMiLz48cGF0aCBkPSJNMTEuNSAzMGM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwbS0yMSAzLjVjNS41LTMgMTUuNS0zIDIxIDAiIHN0cm9rZT0iI2VjZWNlYyIvPjwvZz48L3N2Zz4="};
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const store={get(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const pieceKey=ch=>(ch===ch.toUpperCase()?"w":"b")+({p:"pawn",n:"knight",b:"bishop",r:"rook",q:"queen",k:"king"})[ch.toLowerCase()];
+
+/* =====================================================================
+   OPENINGS
+   ===================================================================== */
+let OPENINGS=null;
+const OFF=window.OFFLINE||null;
+const openingsReady=(OFF?Promise.resolve(OFF.openings):fetch("openings.json").then(r=>r.json())).then(j=>{OPENINGS=j;return j}).catch(()=>null);
+const opKey=fen=>fen.split(" ").slice(0,3).join(" ");
+function openingInfo(fens){ // fens[0] = start; every ply up to the deepest named position counts as book
+  if(!OPENINGS) return {name:null,eco:null,book:[]};
+  let name=null,eco=null,last=0,miss=0; const book=[];
+  for(let i=1;i<fens.length&&i<=50;i++){const o=OPENINGS[opKey(fens[i])];
+    if(o){name=o[1];eco=o[0];last=i;miss=0} else if(++miss>8) break}
+  for(let i=1;i<=last;i++) book[i]=true;
+  return {name,eco,book}}
+function showOpening(el,info){ if(!info||!info.name){el.hidden=true;return}
+  el.hidden=false; el.children[0].textContent=info.eco; el.children[1].textContent=info.name}
+
+/* =====================================================================
+   BOARD COMPONENT
+   ===================================================================== */
+function Board(el,opts={}){
+  const sqs=[]; let st={fen:"8/8/8/8/8/8/8/8 w - - 0 1",flipped:false,last:null,badge:null,arrow:null,movable:null,marks:{}};
+  let sel=null, dests=[], drag=null, prevGrid=null, skipAnim=false;
+  const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for(let i=0;i<64;i++){const d=document.createElement("div");d.className="sq";const p=document.createElement("div");p.className="pc";d.appendChild(p);el.appendChild(d);sqs.push(d)}
+  const arrows=document.createElementNS("http://www.w3.org/2000/svg","svg");arrows.setAttribute("viewBox","0 0 8 8");arrows.setAttribute("class","arrows");el.appendChild(arrows);
+  const nameOf=i=>{const r=(i/8)|0,c=i%8;return st.flipped?"hgfedcba"[c]+(r+1):"abcdefgh"[c]+(8-r)};
+  const xyOf=s=>{const f=s.charCodeAt(0)-97,r=+s[1];return st.flipped?{x:7-f,y:r-1}:{x:f,y:8-r}};
+  const idxOf=s=>{const p=xyOf(s);return p.y*8+p.x};
+  function grid(){const g={};st.fen.split(" ")[0].split("/").forEach((row,r)=>{let c=0;for(const ch of row){if(/\d/.test(ch))c+= +ch;else{g["abcdefgh"[c]+(8-r)]=ch;c++}}});return g}
+  function draw(){
+    const g=grid(); const turn=st.fen.split(" ")[1]; let chk=null;
+    if(opts.showCheck!==false){try{const c=new Chess(st.fen); if(c.in_check()){for(const k in g)if(g[k]===(turn==="w"?"K":"k"))chk=k}}catch(e){}}
+    el.classList.toggle("live",!!st.movable);
+    sqs.forEach((d,i)=>{const n=nameOf(i),f=n.charCodeAt(0)-97,rk=+n[1],r=(i/8)|0,c=i%8;
+      d.className="sq "+(((f+rk)%2)?"d":"l"); d.dataset.sq=n;
+      d.querySelectorAll(".co,.badge,.dot,.ring").forEach(e=>e.remove());
+      if(c===0){const s=document.createElement("span");s.className="co r";s.textContent=n[1];d.appendChild(s)}
+      if(r===7){const s=document.createElement("span");s.className="co f";s.textContent=n[0];d.appendChild(s)}
+      const ch=g[n]; d.querySelector(".pc").style.backgroundImage=ch?`url("${PIECES[pieceKey(ch)]}")`:"none";
+      if(ch&&st.movable&&(ch===ch.toUpperCase()?"w":"b")===st.movable) d.classList.add("mine");
+      if(st.last&&(n===st.last.from||n===st.last.to)) d.classList.add("hl");
+      if(n===chk) d.classList.add("chk");
+      if(n===sel) d.classList.add("sel");
+      const mk=st.marks[n]; if(mk) d.classList.add(mk);
+      if(sel&&dests.includes(n)){const m=document.createElement("div");m.className=g[n]?"ring":"dot";d.appendChild(m)}
+      if(st.badge&&n===st.badge.sq){const b=document.createElement("div");b.className="badge";b.innerHTML=icon(st.badge.cls,"100%");d.appendChild(b)}});
+    arrows.innerHTML="";
+    if(st.arrow){const a=xyOf(st.arrow.slice(0,2)),b=xyOf(st.arrow.slice(2,4));const x1=a.x+.5,y1=a.y+.5,x2=b.x+.5,y2=b.y+.5;
+      const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len,hx=x2-ux*.38,hy=y2-uy*.38,px=-uy,py=ux;
+      arrows.innerHTML=`<line x1="${x1+ux*.15}" y1="${y1+uy*.15}" x2="${hx}" y2="${hy}" stroke="var(--arrow)" stroke-width=".17" stroke-linecap="round"/><polygon points="${x2},${y2} ${hx+px*.24},${hy+py*.24} ${hx-px*.24},${hy-py*.24}" fill="var(--arrow)"/>`}
+  }
+  function plan(oldG,newG){ // which pieces slide where: match vanished pieces to newly placed ones of the same kind
+    const gone=[],came=[];
+    for(const sq in oldG) if(newG[sq]!==oldG[sq]) gone.push([sq,oldG[sq]]);
+    for(const sq in newG) if(oldG[sq]!==newG[sq]) came.push([sq,newG[sq]]);
+    const out=[],used=new Set();
+    for(const [to,pc] of came){let best=null,bd=99;
+      for(const [from,op] of gone){ if(used.has(from)) continue;
+        const same=op===pc, promo=op.toLowerCase()==="p"&&(op===op.toUpperCase())===(pc===pc.toUpperCase())&&(to[1]==="8"||to[1]==="1");
+        if(!same&&!promo) continue;
+        const d=Math.abs(from.charCodeAt(0)-to.charCodeAt(0))+Math.abs(+from[1]-+to[1]); if(d<bd){bd=d;best=from}}
+      if(best){used.add(best);out.push([best,to])}}
+    return out}
+  function animate(pairs){ if(reduce||!pairs.length) return; const ms=Math.min(420,260+pairs.length*40);
+    for(const [from,to] of pairs){const a=xyOf(from),b=xyOf(to),pc=sqs[idxOf(to)].querySelector(".pc");
+      sqs[idxOf(to)].style.zIndex=5; pc.style.transition="none"; pc.style.transform=`translate(${(a.x-b.x)*100}%,${(a.y-b.y)*100}%)`;
+      void pc.offsetWidth; pc.style.transition=`transform ${ms}ms cubic-bezier(.35,.1,.25,1)`; pc.style.transform="translate(0,0)";
+      setTimeout(()=>{pc.style.transition="";pc.style.transform="";sqs[idxOf(to)].style.zIndex=""},ms+30)}}
+  function set(o){const before=prevGrid; const fenChanged=o.fen!==undefined&&o.fen!==st.fen; const flipChanged=o.flipped!==undefined&&o.flipped!==st.flipped;
+    Object.assign(st,o); if(o.fen!==undefined||o.movable!==undefined){sel=null;dests=[]}
+    draw(); const after=grid(); prevGrid=after;
+    if(fenChanged&&before&&!flipChanged&&o.animate!==false&&!skipAnim) animate(plan(before,after));
+    skipAnim=false}
+  function select(s){sel=s; dests=new Chess(st.fen).moves({square:s,verbose:true}).map(m=>m.to); draw()}
+  function canPick(s){const ch=grid()[s]; return st.movable&&ch&&(ch===ch.toUpperCase()?"w":"b")===st.movable&&st.fen.split(" ")[1]===st.movable}
+  async function tryMove(from,to){
+    const c=new Chess(st.fen); const ms=c.moves({square:from,verbose:true}).filter(m=>m.to===to); if(!ms.length) return false;
+    let promo; if(ms.some(m=>m.promotion)){promo=await choosePromo(ms[0].color); if(!promo){sel=null;dests=[];draw();return true}}
+    sel=null;dests=[]; draw(); opts.onMove&&opts.onMove(from,to,promo); return true}
+  function choosePromo(color){return new Promise(res=>{const o=document.createElement("div");o.className="promo";const box=document.createElement("div");
+    ["q","r","b","n"].forEach(p=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-label",{q:"Dronning",r:"Tårn",b:"Løper",n:"Springer"}[p]);
+      b.style.backgroundImage=`url("${PIECES[color+{q:"queen",r:"rook",b:"bishop",n:"knight"}[p]]}")`;b.onclick=e=>{e.stopPropagation();o.remove();res(p)};box.appendChild(b)});
+    o.appendChild(box); o.addEventListener("pointerdown",e=>{if(e.target===o){o.remove();res(null)}}); el.appendChild(o)})}
+  const sqAt=(x,y)=>{const e=document.elementFromPoint(x,y);const s=e&&e.closest&&e.closest(".sq");return s&&el.contains(s)?s.dataset.sq:null};
+  el.addEventListener("pointerdown",e=>{ if(!st.movable||e.button>0) return; const s=e.target.closest(".sq"); if(!s) return; const n=s.dataset.sq;
+    if(sel&&dests.includes(n)){e.preventDefault();tryMove(sel,n);return}
+    if(canPick(n)){e.preventDefault(); select(n); drag={from:n,x:e.clientX,y:e.clientY,ghost:null,id:e.pointerId}; try{el.setPointerCapture(e.pointerId)}catch(_){}}
+    else{sel=null;dests=[];draw()}});
+  el.addEventListener("pointermove",e=>{ if(!drag) return; if(!drag.ghost&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5){
+      const g=document.createElement("div");g.className="ghost";const sz=el.getBoundingClientRect().width/8;g.style.width=g.style.height=sz+"px";
+      g.style.backgroundImage=sqs[idxOf(drag.from)].querySelector(".pc").style.backgroundImage;document.body.appendChild(g);drag.ghost=g;sqs[idxOf(drag.from)].classList.add("dragfrom")}
+    if(drag.ghost){drag.ghost.style.left=e.clientX+"px";drag.ghost.style.top=e.clientY+"px"}});
+  const endDrag=e=>{ if(!drag) return; const d=drag; drag=null; if(d.ghost){d.ghost.remove();sqs.forEach(s=>s.classList.remove("dragfrom"));
+      const to=sqAt(e.clientX,e.clientY); if(to&&to!==d.from&&dests.includes(to)){skipAnim=true;tryMove(d.from,to)} else draw()}};
+  el.addEventListener("pointerup",endDrag); el.addEventListener("pointercancel",e=>{if(drag&&drag.ghost)drag.ghost.remove();drag=null;sqs.forEach(s=>s.classList.remove("dragfrom"));draw()});
+  return {set,get state(){return st},draw,animMs:420};
+}
+
+/* =====================================================================
+   ENGINE (Stockfish 10, Web Worker)
+   ===================================================================== */
+function tryWorker(file){return new Promise((res,rej)=>{let w;try{w=new Worker(file)}catch(e){return rej(e)}
+  const t=setTimeout(()=>{w.terminate();rej(new Error("tidsavbrudd"))},20000);
+  w.onerror=e=>{clearTimeout(t);w.terminate();rej(e)};
+  w.onmessage=e=>{if(String(e.data)==="uciok"){clearTimeout(t);w.onerror=null;res(w)}};
+  w.postMessage("uci")})}
+function Engine(){
+  let w=null, chain=Promise.resolve();
+  async function boot(){ if(w) return w; if(OFF){w=await tryWorker(OFF.engineUrl());return w} try{w=await tryWorker("stockfish.js")}catch(e){w=await tryWorker("stockfish.asm.js")} return w}
+  function run(fn){const p=chain.then(async()=>{const wk=await boot();return fn(wk)}); chain=p.catch(()=>{}); return p}
+  function search(fen,{depth=12,multipv=1,skill=20}={}){return run(wk=>new Promise(res=>{const lines={};
+    wk.onmessage=e=>{const l=String(e.data);
+      if(l.startsWith("info")&&l.includes(" pv ")){const sc=l.match(/ score (cp|mate) (-?\d+)/); if(!sc) return;
+        const d=+(l.match(/ depth (\d+)/)||[0,0])[1], mp=+(l.match(/ multipv (\d+)/)||[0,1])[1];
+        if(!lines[mp]||d>=lines[mp].depth) lines[mp]={depth:d,type:sc[1],val:+sc[2],pv:l.split(" pv ")[1].trim().split(" ")}}
+      else if(l.startsWith("bestmove")) res({best:l.split(" ")[1],lines:Object.keys(lines).sort((a,b)=>a-b).map(k=>lines[k])})};
+    wk.postMessage("setoption name MultiPV value "+multipv); wk.postMessage("setoption name Skill Level value "+skill);
+    wk.postMessage("position fen "+fen); wk.postMessage("go depth "+depth)}))}
+  function stop(){if(w){w.terminate();w=null} chain=Promise.resolve()}
+  return {search,stop,newGame:()=>run(wk=>wk.postMessage("ucinewgame"))};
+}
+
+/* =====================================================================
+   CLASSIFICATION HELPERS
+   ===================================================================== */
+const CLS={brilliant:{n:"Brilliant",g:"!!",c:"--c-brilliant"},great:{n:"Great",g:"!",c:"--c-great"},best:{n:"Best",g:"★",c:"--c-best"},
+  excellent:{n:"Excellent",g:"✓",c:"--c-excellent"},good:{n:"Good",g:"✓",c:"--c-good"},book:{n:"Book",g:"B",c:"--c-book"},
+  forced:{n:"Forced",g:"→",c:"--c-forced"},inaccuracy:{n:"Inaccuracy",g:"?!",c:"--c-inaccuracy"},
+  mistake:{n:"Mistake",g:"?",c:"--c-mistake"},blunder:{n:"Blunder",g:"??",c:"--c-blunder"},pending:{n:"Venter",g:"…",c:"--c-pending"}};
+const ORDER=["brilliant","great","best","excellent","good","book","forced","inaccuracy","mistake","blunder"];
+const NOTE={brilliant:"Et sterkt offer som motoren bekrefter.",great:"Det eneste trekket som holder stillingen.",best:"Motorens førstevalg.",
+  excellent:"Nesten like godt som det beste trekket.",good:"Et greit trekk, men det fantes noe litt bedre.",inaccuracy:"Litt unøyaktig. Noe av fordelen forsvinner.",
+  mistake:"En feil som gir bort en god del av stillingen.",blunder:"En alvorlig feil som endrer partiet.",forced:"Det eneste lovlige trekket.",book:"Kjent åpningsteori."};
+const NOBEST=["best","great","brilliant","book","forced"];
+const VAL={p:1,n:3,b:3,r:5,q:9,k:0};
+function icon(cls,size){const k=CLS[cls];const s=size||18;
+  return `<svg class="ico" viewBox="0 0 20 20" width="${s}" height="${s}" aria-hidden="true"><circle cx="10" cy="10" r="9.5" fill="var(${k.c})"/><text x="10" y="10.5" text-anchor="middle" dominant-baseline="middle" font-family="Archivo,Arial,sans-serif" font-weight="800" font-size="${k.g.length>1?9.5:11}" fill="#fff">${k.g}</text></svg>`}
+const cpOf=l=>l.type==="mate"?(10000-Math.abs(l.val)*10)*(l.val>0?1:-1):l.val;
+const wpc=cp=>50+50*(2/(1+Math.exp(-0.00368208*cp))-1);
+function wp(ev){if(!ev)return 50;if(ev.mate===0)return ev.winner==="w"?100:ev.winner==="b"?0:50;if(ev.mate!=null)return ev.mate>0?100:0;return wpc(ev.cp)}
+function evText(ev){if(!ev)return"…";if(ev.mate===0)return ev.winner==="w"?"1–0":ev.winner==="b"?"0–1":"½–½";if(ev.mate!=null)return"M"+Math.abs(ev.mate);
+  const v=ev.cp/100;return(v>0?"+":v<0?"−":"")+Math.abs(v).toFixed(1)}
+function terminalEval(fen){const c=new Chess(fen);if(c.in_checkmate())return{cp:null,mate:0,winner:c.turn()==="w"?"b":"w"};if(c.game_over())return{cp:0,mate:null,draw:true};return null}
+
+/* =====================================================================
+   PGN
+   ===================================================================== */
+function parsePGN(text){
+  const headers={}; text=String(text||"").replace(/\r/g,"");
+  text=text.replace(/^\s*\[(\w+)\s+"((?:[^"\\]|\\.)*)"\]\s*$/gm,(m,k,v)=>{headers[k]=v.replace(/\\"/g,'"');return ""});
+  let body=text.replace(/\{[^}]*\}/g," ").replace(/;[^\n]*/g," ");
+  let prev; do{prev=body;body=body.replace(/\([^()]*\)/g," ")}while(body!==prev);
+  body=body.replace(/\$\d+/g," ");
+  const fen=headers.FEN||null; const g=fen?new Chess(fen):new Chess();
+  if(fen&&g.fen().split(" ")[0]!==fen.split(" ")[0]) throw new Error("Startstillingen (FEN) i PGN-en er ugyldig.");
+  const startFen=g.fen(), moves=[];
+  for(let t of body.split(/\s+/)){
+    if(!t) continue; if(/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t)) break;
+    t=t.replace(/^\d+\.(\.\.)?/,""); if(!t||/^\.+$/.test(t)) continue;
+    t=t.replace(/[!?]+$/,"").replace(/^0-0-0/,"O-O-O").replace(/^0-0/,"O-O");
+    const fb=g.fen(); const mv=g.move(t,{sloppy:true});
+    if(!mv){const fm=+fb.split(" ")[5],side=fb.split(" ")[1];throw new Error(`Trekk ${fm}${side==="w"?".":"..."} «${t}» er ikke lovlig i stillingen. Sjekk at PGN-en er hel og ikke redigert.`)}
+    moves.push({san:mv.san,from:mv.from,to:mv.to,c:mv.color,piece:mv.piece,captured:mv.captured||null,uci:mv.from+mv.to+(mv.promotion||""),fenBefore:fb,fen:g.fen()});
+  }
+  if(!moves.length) throw new Error("Fant ingen trekk. Lim inn hele PGN-en, inkludert trekklisten.");
+  return {headers,startFen,moves};
+}
+
+/* =====================================================================
+   ANALYSE TAB
+   ===================================================================== */
+const A={G:null,cur:0,flipped:false,job:0,engine:Engine(),board:null};
+const STORE_A="pgn-analyse-siste";
+A.board=Board($("a-board"));
+function aWhiteEval(i){const G=A.G,T=G.term[i];if(T)return T;const R=G.raw[i];if(!R||!R.lines.length)return null;
+  const s=G.fens[i].split(" ")[1]==="w"?1:-1,l=R.lines[0];return l.type==="mate"?{cp:null,mate:l.val*s}:{cp:l.val*s,mate:null}}
+function aClassify(k){
+  const G=A.G,m=G.moves[k-1],Ar=G.raw[k-1],Br=G.raw[k]; if(!Ar||(!Br&&!G.term[k])) return null;
+  const before=cpOf(Ar.lines[0]); const match=Ar.lines.find(l=>l.pv[0]===m.uci); const T=G.term[k];
+  const after=T?(T.mate===0?10000:0):match?cpOf(match):-cpOf(Br.lines[0]);
+  const loss=Math.max(0,wpc(before)-wpc(after)); const legal=new Chess(m.fenBefore).moves().length; let cls;
+  if(G.op.book[k]) cls="book";
+  else if(legal===1) cls="forced";
+  else if(m.uci===Ar.best||(match&&cpOf(match)===before)){cls="best";const second=Ar.lines[1]?cpOf(Ar.lines[1]):null;const pm=G.moves[k-2];const recap=pm&&pm.to===m.to;
+    if(second!=null&&wpc(before)-wpc(second)>=10&&wpc(before)<97&&!recap) cls="great";
+    const pv=VAL[m.piece],cv=m.captured?VAL[m.captured]:0;
+    if(m.piece!=="k"&&m.piece!=="p"&&pv>=3&&cv<pv&&wpc(before)<92&&Br&&Br.best&&Br.best.slice(2,4)===m.to&&!recap) cls="brilliant"}
+  else if(after<=-9000&&before>-9000) cls=before>-300?"blunder":"mistake";
+  else if(loss<=2) cls="excellent"; else if(loss<=5) cls="good"; else if(loss<=10) cls="inaccuracy"; else if(loss<=20) cls="mistake"; else cls="blunder";
+  let best=null; if(Ar.best&&Ar.best!=="(none)"){const c=new Chess(m.fenBefore);const mv=c.move({from:Ar.best.slice(0,2),to:Ar.best.slice(2,4),promotion:Ar.best[4]||"q"});best=mv?mv.san:null}
+  let note=NOTE[cls]; const ev=G.evals[k]; if(ev&&ev.mate&&ev.mate!==0) note+=` Matt i ${Math.abs(ev.mate)} for ${ev.mate>0?"hvit":"svart"}.`;
+  return {cls,best,bu:Ar.best,loss:Math.round(loss*10)/10,note}}
+function aNewGame(parsed,o){
+  const N=parsed.moves.length;
+  A.G={headers:parsed.headers,startFen:parsed.startFen,moves:parsed.moves,fens:[parsed.startFen,...parsed.moves.map(m=>m.fen)],
+    evals:new Array(N+1).fill(null),res:new Array(N).fill(null),raw:new Array(N+1).fill(null),depth:o.depth,example:!!o.example,pgn:o.pgn,op:{book:[]}};
+  A.G.term=A.G.fens.map(terminalEval); A.G.term.forEach((t,i)=>{if(t)A.G.evals[i]=t});
+  A.G.op=openingInfo(A.G.fens);
+  A.cur=0; A.prevCur=null; A.flipped=!!o.flip; aBuildList(); aHeader(); aRender()}
+/* Show a stored game: with its saved analysis if it has one, otherwise just the moves. */
+function aShow(id){ const g=Games.get(id); if(!g) return false; A.job++; A.engine.stop(); $("a-progress").hidden=true;
+  let parsed; try{parsed=parsePGN(g.pgn)}catch(e){return false}
+  A.gameId=id; Games.remember(id);
+  aNewGame(parsed,{depth:g.analysis?g.analysis.depth:null,pgn:g.pgn,flip:g.color==="b",example:g.source==="example"});
+  if(g.analysis&&g.analysis.res&&g.analysis.res.length===A.G.moves.length){A.G.evals=g.analysis.evals.slice();A.G.res=g.analysis.res.slice()}
+  aUpdate(); aGames(); return true}
+/* Analyse the selected game (or a new PGN) and store the result with the game. */
+async function aRun(text,o={}){
+  const msg=$("a-msg"); msg.className="msg"; msg.textContent=""; let parsed;
+  try{parsed=parsePGN(text)}catch(e){msg.className="msg err";msg.textContent=e.message;$("a-intake").open=true;return}
+  const depth=+$("a-depth").value, my=++A.job; A.engine.stop(); await openingsReady;
+  const id=o.gameId||Games.addPgn(text,parsed); A.gameId=id; Games.remember(id);
+  aNewGame(parsed,{depth,pgn:text,flip:o.flip!==undefined?o.flip:(Games.get(id)||{}).color==="b"}); $("a-intake").open=false; aGames(true);
+  A.running=true; aActBtn(); const G=A.G,N=G.moves.length,total=N+1,t0=Date.now(); $("a-progress").hidden=false; aProg(0,total,"Laster sjakkmotoren …");
+  try{await A.engine.newGame()}catch(e){$("a-ptxt").textContent="Sjakkmotoren kunne ikke starte i denne nettleseren.";return}
+  for(let i=0;i<=N;i++){ if(my!==A.job) return; aProg(i,total,`Analyserer stilling ${i+1} av ${total} · dybde ${depth}`);
+    if(!G.term[i]){const r=await A.engine.search(G.fens[i],{depth,multipv:3}); if(my!==A.job) return; G.raw[i]=r; G.evals[i]=aWhiteEval(i)}
+    if(i>=1) G.res[i-1]=aClassify(i); aUpdate()}
+  const s=Math.round((Date.now()-t0)/1000); aProg(total,total,`Ferdig · ${N} trekk analysert på ${s>=60?Math.floor(s/60)+" min "+(s%60)+" s":s+" s"}`); $("a-stop").hidden=true;
+  Games.setAnalysis(id,{depth,evals:G.evals,res:G.res,acc:{w:aAcc("w"),b:aAcc("b")}}); A.running=false; aUpdate(); aGames()}
+function aProg(i,t,txt){$("a-pfill").style.width=(i/t*100)+"%";$("a-ptxt").textContent=txt;$("a-stop").hidden=false}
+function aAnalysed(){return A.G&&A.G.res.length>0&&A.G.res.every(Boolean)}
+function aActBtn(){const b=$("a-analyze"); b.disabled=!!A.running||!A.G; b.textContent=A.running?"Analyserer …":aAnalysed()?"Analyser på nytt":"Analyser"}
+$("a-analyze").onclick=()=>{const g=Games.get(A.gameId); if(g) aRun(g.pgn,{gameId:g.id})};
+function aHeader(){const G=A.G,h=G.headers,W=h.White||"Hvit",B=h.Black||"Svart",elo=x=>x&&x!=="?"?` (${x})`:"";
+  $("a-title").textContent=`${W}${elo(h.WhiteElo)} – ${B}${elo(h.BlackElo)}`; $("a-eyebrow").textContent=G.example?"Fra chess.com":"Partianalyse";
+  const bits=[]; if(h.Event&&h.Event!=="?")bits.push(h.Event); if(h.Date&&!/^\?/.test(h.Date))bits.push(h.Date.replace(/\.\?\?/g,""));
+  if(h.Result&&h.Result!=="*")bits.push(h.Result.replace("1/2-1/2","½–½").replace("-","–")); bits.push(`${Math.ceil(G.moves.length/2)} trekk`); bits.push(aAnalysed()&&G.depth?`Stockfish dybde ${G.depth}`:"Ikke analysert ennå"); aActBtn();
+  $("a-sub").textContent=bits.join(" · "); showOpening($("a-opening"),G.op)}
+function aAcc(c){const G=A.G;const w=G.moves.map((m,i)=>[m,G.res[i]]).filter(([m,r])=>m.c===c&&r&&r.cls!=="book");if(!w.length)return null;
+  return w.reduce((s,[m,r])=>s+Math.max(0,Math.min(100,103.1668*Math.exp(-0.04354*r.loss)-3.1669)),0)/w.length}
+function aSummary(){const G=A.G,sum=$("a-summary"),h=G.headers; sum.innerHTML="";
+  [["w",h.White||"Hvit"],["b",h.Black||"Svart"]].forEach(([c,n])=>{const cnt={};G.moves.forEach((m,i)=>{if(m.c===c&&G.res[i])cnt[G.res[i].cls]=(cnt[G.res[i].cls]||0)+1});
+    const a=aAcc(c),el=document.createElement("div");el.className="card";
+    el.innerHTML=`<div class="side-head"><b></b><span class="acc">${a==null?"–":a.toFixed(1)}<small>Nøyaktighet</small></span></div><div class="counts">${ORDER.filter(k=>cnt[k]).map(k=>`<span class="chip">${icon(k)}<span class="n">${cnt[k]}</span>${CLS[k].n}</span>`).join("")||'<span class="hint">Venter på analyse …</span>'}</div>`;
+    el.querySelector("b").textContent=n+(c==="w"?" · hvit":" · svart"); sum.appendChild(el)})}
+function aRender(){
+  const G=A.G,N=G.moves.length,cur=A.cur,mv=cur>0?G.moves[cur-1]:null,rs=cur>0?G.res[cur-1]:null;
+  A.board.set({fen:G.fens[cur],flipped:A.flipped,animate:Math.abs(cur-(A.prevCur??cur))===1,last:mv?{from:mv.from,to:mv.to}:null,badge:mv?{sq:mv.to,cls:rs?rs.cls:"pending"}:null,
+    arrow:rs&&rs.bu&&!NOBEST.includes(rs.cls)?rs.bu:null});
+  A.prevCur=cur; const ev=G.evals[cur],w=wp(ev); $("a-evalbar").classList.toggle("flip",A.flipped); $("a-evalw").style.height=w+"%";
+  const t=ev?evText(ev):"",ws=A.flipped?$("a-lbltop"):$("a-lblbot"),bs=A.flipped?$("a-lblbot"):$("a-lbltop");
+  ws.style.color="var(--bar-black)";bs.style.color="var(--bar-white)";ws.textContent=w>=50?t:"";bs.textContent=w<50?t:"";
+  const card=$("a-card");
+  if(!mv){card.innerHTML=`<div class="top"><span class="mvname">Startstilling</span><span class="ev">${evText(ev)}</span></div><p class="note">${!aAnalysed()&&!A.running?"Dette partiet er ikke analysert ennå. Trykk «Analyser» for å få vurdering av hvert trekk. Du kan bla gjennom trekkene allerede nå.":"Bla gjennom partiet med pilene, klikk på et trekk eller i grafen."}</p>`}
+  else{const k=CLS[rs?rs.cls:"pending"],fm=+mv.fenBefore.split(" ")[5],no=fm+(mv.c==="w"?".":"...");
+    card.innerHTML=`<div class="top"><span class="mvname"></span><span class="tag" style="background:var(${k.c})">${icon(rs?rs.cls:"pending",20)}${k.n}</span><span class="ev" title="Evaluering etter trekket">${evText(ev)}</span></div><p class="sub who"></p><p class="note"></p>`;
+    card.querySelector(".mvname").textContent=`${no} ${mv.san}`; card.querySelector(".who").textContent=mv.c==="w"?(G.headers.White||"Hvit"):(G.headers.Black||"Svart");
+    card.querySelector(".note").textContent=rs?rs.note:A.running?"Analysen av dette trekket er ikke ferdig ennå.":"Trykk «Analyser» for å få vurdering av dette trekket.";
+    if(rs&&rs.cls==="book"&&G.op.name){const p=document.createElement("p");p.className="sub";p.textContent=`Åpning: ${G.op.name}`;card.appendChild(p)}
+    if(rs&&rs.best&&rs.best!==mv.san&&!NOBEST.includes(rs.cls)){const p=document.createElement("p");p.className="sub";p.innerHTML=`Motorens beste trekk var <b></b>.`;p.querySelector("b").textContent=rs.best;card.appendChild(p)}}
+  document.querySelectorAll("#a-tbody .mv").forEach(b=>b.classList.toggle("on",+b.dataset.i===cur));
+  const on=document.querySelector("#a-tbody .mv.on"); if(on){const L=on.closest(".list"),r=on.getBoundingClientRect(),R=L.getBoundingClientRect(); if(r.top<R.top||r.bottom>R.bottom) L.scrollTop+=r.top-R.top-R.height/2+r.height/2}
+  $("a-first").disabled=$("a-prev").disabled=cur===0; $("a-last").disabled=$("a-next").disabled=cur===N; aGraph()}
+function aBuildList(){const tb=$("a-tbody");tb.innerHTML="";let tr=null;
+  A.G.moves.forEach((m,i)=>{if(m.c==="w"||i===0){tr=document.createElement("tr");tr.innerHTML=`<td class="no">${m.fenBefore.split(" ")[5]}.</td><td></td><td></td>`;tb.appendChild(tr)}
+    const td=tr.children[m.c==="w"?1:2];td.innerHTML=`<button class="mv" data-i="${i+1}"><span class="i"></span><span></span></button>`;td.querySelector("span:last-child").textContent=m.san}); aIcons()}
+function aIcons(){document.querySelectorAll("#a-tbody .mv").forEach(b=>{const r=A.G.res[+b.dataset.i-1];b.querySelector(".i").innerHTML=icon(r?r.cls:"pending")})}
+$("a-tbody").addEventListener("click",e=>{const b=e.target.closest(".mv");if(b){A.cur=+b.dataset.i;aRender()}});
+$("a-legend").innerHTML=ORDER.map(k=>`<span>${icon(k,14)}${CLS[k].n}</span>`).join("");
+const GR=$("a-graph"),GW=600,GH=110; GR.setAttribute("viewBox",`0 0 ${GW} ${GH}`); GR.setAttribute("preserveAspectRatio","none");
+function aGraph(){const G=A.G,N=G.moves.length,gx=i=>i/N*GW,gy=i=>GH-wp(G.evals[i])/100*GH; let last=-1; for(let i=0;i<=N;i++){if(G.evals[i])last=i;else break}
+  let poly=""; if(last>=0){const pts=[];for(let i=0;i<=last;i++)pts.push(`${gx(i).toFixed(1)},${gy(i).toFixed(1)}`);poly=`<polygon points="0,${GH} ${pts.join(" ")} ${gx(last).toFixed(1)},${GH}" fill="var(--bar-white)"/>`}
+  const marks=G.moves.map((m,i)=>{const r=G.res[i];return r&&["inaccuracy","mistake","blunder","great","brilliant"].includes(r.cls)&&G.evals[i+1]?`<circle cx="${gx(i+1)}" cy="${gy(i+1)}" r="3.6" fill="var(${CLS[r.cls].c})" stroke="var(--surface)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`:""}).join("");
+  GR.innerHTML=`<rect x="0" y="0" width="${GW}" height="${GH}" fill="var(--bar-black)" opacity=".9"/>${poly}<line x1="0" y1="${GH/2}" x2="${GW}" y2="${GH/2}" stroke="rgba(128,128,128,.7)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/><line x1="${gx(A.cur)}" y1="0" x2="${gx(A.cur)}" y2="${GH}" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>${marks}`}
+function aJump(e){const r=GR.getBoundingClientRect(),N=A.G.moves.length;A.cur=Math.max(0,Math.min(N,Math.round((e.clientX-r.left)/r.width*N)));aRender()}
+let gdrag=false; GR.addEventListener("pointerdown",e=>{gdrag=true;GR.setPointerCapture(e.pointerId);aJump(e)}); GR.addEventListener("pointermove",e=>{if(gdrag)aJump(e)}); GR.addEventListener("pointerup",()=>gdrag=false);
+function aUpdate(){aIcons();aSummary();aHeader();aRender()}
+const aGo=i=>{A.cur=Math.max(0,Math.min(A.G.moves.length,i));aRender()};
+$("a-first").onclick=()=>aGo(0);$("a-prev").onclick=()=>aGo(A.cur-1);$("a-next").onclick=()=>aGo(A.cur+1);$("a-last").onclick=()=>aGo(A.G.moves.length);
+$("a-flip").onclick=()=>{A.flipped=!A.flipped;aRender()};
+$("a-go").onclick=()=>{A.userPicked=true;aRun($("a-pgn").value)};
+$("a-stop").onclick=()=>{A.job++;A.engine.stop();A.running=false;aActBtn();$("a-ptxt").textContent="Analysen ble stoppet. Trekkene som er ferdige, vises.";$("a-stop").hidden=true};
+$("a-file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("a-pgn").value=r.result;aRun(r.result)};r.readAsText(f);e.target.value=""});
+function sizeBar(){$("a-evalbar").style.height=$("a-board").getBoundingClientRect().height+"px"}
+new ResizeObserver(sizeBar).observe($("a-board"));
+
+/* =====================================================================
+   PUZZLES TAB
+   ===================================================================== */
+const P={list:null,profile:null,cur:null,board:null,db:null,uid:null,busy:false,lastDelta:null};
+const STORE_P="sjakknotter-profil";
+P.board=Board($("p-board"),{onMove:pMove}); P.board.set({fen:new Chess().fen()});
+/* Rating change. Elo-style, so the size follows how surprising the result is:
+   solving a hard puzzle gives more than an easy one; failing an easy puzzle costs more than a hard one.
+   Gains use the full factor and losses half of it, so progress goes faster forwards than backwards. */
+const GAIN=1.0, LOSS=0.5;
+function ratingChange(pr,puzzle,win){
+  const K=pr.games<10?48:pr.games<30?32:20, E=1/(1+Math.pow(10,(puzzle-pr.rating)/400));
+  return win?Math.max(3,Math.round(K*GAIN*(1-E))):-Math.max(1,Math.round(K*LOSS*E))}
+const freshProfile=r=>({rating:r,games:0,solved:0,failed:0,streak:0,best:r,hist:[r],seen:[]});
+/* Account storage: the db capability keeps each person's own documents under data/users/<id>/,
+   so ratings follow the account across sessions and devices. Browser storage is a backup. */
+const Acct={db:null,uid:null,ready:null};
+Acct.ready=(async()=>{ try{ if(OFF||!(window.claude&&claude.use)) return false;
+    const to=new Promise(r=>setTimeout(()=>r([null,null]),12000));
+    const [db,user]=await Promise.race([Promise.all([claude.use("db"),claude.use("user")]),to]);
+    if(!db||!user) return false; const id=await user.id(); if(!id) return false; Acct.db=db; Acct.uid=id; return true}catch(e){return false}})();
+async function acctGet(name){ if(!await Acct.ready) return undefined;
+  for(let i=0;i<3;i++){try{const s=await withTimeout(Acct.db.doc(`data/users/${Acct.uid}/${name}`).get(),8000);return s.exists?JSON.parse(JSON.stringify(s.data())):null}catch(e){if(i===2)return undefined;await sleep(800*(i+1))}}}
+const acctQ={}, acctRetry={};
+// a write that failed is tried again when the connection returns or the page is hidden
+function flushRetries(){for(const k in acctRetry){const d=acctRetry[k];delete acctRetry[k];acctSet(k,d).then(ok=>{if(k==="puzzleprofile")pStoreNote(ok)})}}
+window.addEventListener("online",flushRetries); document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushRetries()});
+setInterval(flushRetries,30000);
+function acctSet(name,data){ // one write at a time per document; the latest value wins
+  const q=acctQ[name]||(acctQ[name]={busy:false,next:undefined}); q.next=data; if(q.busy) return q.p;
+  q.busy=true; q.p=(async()=>{let ok=true; while(q.next!==undefined){const d=q.next;q.next=undefined;
+      if(!await Acct.ready){ok=false;break}
+      const ref=Acct.db.doc(`data/users/${Acct.uid}/${name}`); let done=false;
+      for(let i=0;i<3&&!done;i++){try{await withTimeout(d===null?ref.delete():ref.set(d),8000);done=true}catch(e){Acct.lastErr=(e&&e.code)||String(e&&e.message||e);await sleep(1000*(i+1))}}
+      if(!done){ok=false; if(q.next===undefined&&d!==null) acctRetry[name]=d} else delete acctRetry[name]}
+    q.busy=false; return ok})(); return q.p}
+function newer(a,b){ if(!a) return b||null; if(!b) return a; // most played wins; timestamps break ties
+  const ga=a.games??-1, gb=b.games??-1; if(ga!==gb) return gb>ga?b:a; return (b.updated||0)>(a.updated||0)?b:a}
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),ms))]);
+async function pInitStorage(){ const remote=await acctGet("puzzleprofile"); P.db=Acct.db; P.uid=Acct.uid;
+  const local=store.get(STORE_P); const best=newer(remote||null,local);
+  if(best&&remote!==undefined&&best!==remote) acctSet("puzzleprofile",best).then(pStoreNote); // the account had an older copy: bring it up to date
+  P.remoteOk=remote!==undefined; return best}
+async function pSave(){P.profile.updated=Date.now(); const p=JSON.parse(JSON.stringify(P.profile)); store.set(STORE_P,p);
+  const ok=await acctSet("puzzleprofile",p); pStoreNote(ok)}
+function pStoreNote(ok){$("p-store").textContent=OFF?"Offline-versjon: ratingen lagres i denne nettleseren på denne maskinen.":ok?"Ratingen er lagret på kontoen din og huskes neste gang du åpner appen, også på andre enheter."
+  :"Ratingen er lagret i denne nettleseren, men kom ikke fram til kontoen din. Appen prøver igjen automatisk."}
+let pInitDone=false;
+async function pInit(){ if(pInitDone) return; pInitDone=true;
+  $("p-status").textContent="Laster nøtter …";
+  const [list,remote]=await Promise.all([(OFF?Promise.resolve(OFF.puzzles):fetch("puzzles.json").then(r=>r.json())).catch(()=>null),pInitStorage()]);
+  if(!list){$("p-status").textContent="Nøttene kunne ikke lastes. Last siden på nytt.";return}
+  P.list=list; P.profile=remote; pStoreNote(!!P.db&&P.remoteOk);
+  if(!P.profile){$("p-start").hidden=false;$("p-status").textContent="Velg startnivå for å begynne";pStats();return}
+  pStats(); pNext()}
+document.querySelectorAll("#p-start [data-level]").forEach(b=>b.onclick=async()=>{P.profile=freshProfile(+b.dataset.level);$("p-start").hidden=true;pSave();pStats();pNext()});
+function pPick(){const L=P.list,pr=P.profile,target=pr.rating+Math.min(pr.streak,5)*20,seen=new Set(pr.seen);
+  let lo=0,hi=L.length; while(lo<hi){const m=(lo+hi)>>1; if(L[m][3]<target) lo=m+1; else hi=m}
+  for(const win of [50,100,200,400,3000]){const c=[]; for(let i=lo;i<L.length&&L[i][3]<=target+win;i++) if(!seen.has(L[i][0])) c.push(L[i]);
+    for(let i=lo-1;i>=0&&L[i][3]>=target-win;i--) if(!seen.has(L[i][0])) c.push(L[i]);
+    if(c.length) return c[Math.floor(Math.random()*c.length)]}
+  return L[Math.floor(Math.random()*L.length)]}
+async function pNext(){ if(!P.list||!P.profile||P.busy) return;
+  const [id,fen,moves,rating]=pPick(); const mv=moves.split(" ");
+  const c=new Chess(fen); const color=c.turn()==="w"?"b":"w";
+  P.cur={id,fen,moves:mv,rating,step:0,failed:false,done:false,color,chess:c};
+  $("p-msg").textContent=""; $("p-msg").className="msg"; $("p-delta").textContent=""; $("p-prating").textContent=rating;
+  $("p-turn").className="turnchip "+color; $("p-status").textContent="Se på stillingen …";
+  P.board.set({fen,flipped:color==="b",last:null,movable:null,marks:{},arrow:null,badge:null,animate:false});
+  $("p-hint").disabled=$("p-solution").disabled=true; $("p-next").disabled=true; P.cur.mine=Math.ceil((mv.length-1)/2);
+  P.busy=true; await sleep(900); P.busy=false; if(P.cur.id!==id) return;
+  pPlay(mv[0]); P.cur.step=1; pYourTurn()}
+function pPlay(uci){const c=P.cur.chess;const m=c.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||undefined});
+  P.board.set({fen:c.fen(),last:{from:m.from,to:m.to},marks:{},movable:null});return m}
+function pYourTurn(){const cur=P.cur; P.board.set({movable:cur.color}); const n=Math.ceil(cur.step/2);
+  $("p-status").textContent=(cur.color==="w"?"Hvit":"Svart")+" i trekket – "+(cur.mine>1?`trekk ${n} av ${cur.mine}`:"finn det beste trekket");
+  $("p-hint").disabled=$("p-solution").disabled=false; $("p-next").disabled=true}
+async function pMove(from,to,promo){
+  const cur=P.cur; if(!cur||cur.done) return; const exp=cur.moves[cur.step];
+  const uci=from+to+(promo||""); const test=new Chess(cur.chess.fen()); test.move({from,to,promotion:promo||undefined});
+  const ok=uci===exp||(exp&&uci===exp.slice(0,4)&&!exp[4])||test.in_checkmate();
+  if(!ok){ if(!cur.failed){cur.failed=true;cur.why="feil trekk";await pFinish(false,true)}
+    $("p-msg").className="msg err";$("p-msg").textContent="Ikke riktig. Prøv igjen, eller trykk «Vis løsning».";
+    P.board.set({marks:{[to]:"wrong"}}); setTimeout(()=>{if(P.cur===cur&&!cur.done)P.board.set({marks:{}})},700); return}
+  pPlay(uci); cur.step++; $("p-msg").className="msg ok"; $("p-msg").textContent=cur.step>=cur.moves.length||test.in_checkmate()?"Riktig!":"Riktig! Nøtta er ikke ferdig – se motstanderens svar og finn neste trekk.";
+  if(cur.step>=cur.moves.length||test.in_checkmate()){await pFinish(!cur.failed,false);return}
+  P.board.set({movable:null}); await sleep(650); if(P.cur!==cur) return;
+  pPlay(cur.moves[cur.step]); cur.step++;
+  if(cur.step>=cur.moves.length){await pFinish(!cur.failed,false);return}
+  pYourTurn()}
+async function pFinish(win,stillPlaying){ try{ return await pFinishInner(win,stillPlaying) }catch(e){ console.warn(e); if(!stillPlaying&&P.cur&&!P.cur.done) pDone(win) } }
+async function pFinishInner(win,stillPlaying){
+  const cur=P.cur,pr=P.profile; if(cur.rated) {if(!stillPlaying) pDone(win);return}
+  cur.rated=true;
+  const d=ratingChange(pr,cur.rating,win);
+  pr.rating=Math.max(100,pr.rating+d); pr.games++; if(win){pr.solved++;pr.streak++}else{pr.failed++;pr.streak=0}
+  pr.best=Math.max(pr.best,pr.rating); pr.hist.push(pr.rating); if(pr.hist.length>100)pr.hist=pr.hist.slice(-100);
+  pr.seen.push(cur.id); if(pr.seen.length>600)pr.seen=pr.seen.slice(-600);
+  const del=$("p-delta"); del.textContent=(d>=0?"+":"−")+Math.abs(d); del.className="delta "+(d>=0?"up":"down");
+  pr.log=(pr.log||[]).concat([{r:cur.rating,d,win,why:win?"løst":cur.why||"ikke løst"}]).slice(-12);
+  try{pStats()}catch(e){console.warn(e)}
+  if(!stillPlaying) pDone(win);
+  pSave().catch(e=>console.warn(e))}
+function pDone(win){const cur=P.cur;cur.done=true;P.board.set({movable:null});
+  $("p-status").textContent=win?"Løst!":"Nøtta er ferdig"; $("p-msg").className="msg "+(win?"ok":"");
+  $("p-msg").textContent=win?"Godt funnet. Neste nøtt blir litt vanskeligere.":"Den telles som ikke løst. Neste nøtt blir litt enklere.";
+  $("p-hint").disabled=$("p-solution").disabled=true;$("p-next").disabled=false;$("p-next").focus()}
+$("p-next").onclick=()=>{ if(P.cur&&!P.cur.done) return; pNext()};
+$("p-hint").onclick=async()=>{const cur=P.cur;if(!cur||cur.done)return; const exp=cur.moves[cur.step];
+  P.board.set({marks:{[exp.slice(0,2)]:"hint"}}); $("p-msg").className="msg";$("p-msg").textContent="Hintet viser brikken som skal flyttes. Nøtta teller da som ikke løst.";
+  if(!cur.failed){cur.failed=true;cur.why="hint";await pFinish(false,true)}};
+$("p-solution").onclick=async()=>{const cur=P.cur;if(!cur||cur.done)return;P.board.set({movable:null});
+  if(!cur.failed){cur.failed=true;cur.why="viste løsning";await pFinish(false,true)}
+  while(cur.step<cur.moves.length&&P.cur===cur){pPlay(cur.moves[cur.step]);cur.step++;await sleep(900)}
+  if(P.cur===cur) pDone(false)};
+function pLog(){const el=$("p-log"),L=(P.profile&&P.profile.log)||[]; el.innerHTML="";
+  if(!L.length) return; const h=document.createElement("p");h.className="eyebrow";h.textContent="Siste nøtter";el.appendChild(h);
+  L.slice().reverse().forEach(x=>{const r=document.createElement("div");r.className="plrow";
+    r.innerHTML=`<span class="mono"></span><span></span><span class="mono delta ${x.d>=0?"up":"down"}"></span>`;
+    r.children[0].textContent=x.r; r.children[1].textContent=x.why; r.children[2].textContent=(x.d>=0?"+":"−")+Math.abs(x.d); el.appendChild(r)})}
+function pStats(){const pr=P.profile; if(!pr){$("p-rating").textContent="–";["p-solved","p-failed","p-streak"].forEach(i=>$(i).textContent="0");$("p-best").textContent="–";$("p-prating").textContent="–";$("p-log").innerHTML="";$("p-msg").textContent="";$("p-turn").className="turnchip";
+  P.board.set({fen:new Chess().fen(),flipped:false,last:null,movable:null,marks:{}});$("p-spark").innerHTML=`<text x="4" y="40" fill="var(--muted)" font-size="12">Utviklingen vises når du har løst noen nøtter</text>`;return}
+  $("p-rating").innerHTML=`${pr.rating}${pr.games<10?"<small>?</small>":""}`; $("p-rating").title=pr.games<10?"Foreløpig rating (under 10 nøtter)":"";
+  pLog(); $("p-solved").textContent=pr.solved;$("p-failed").textContent=pr.failed;$("p-streak").textContent=pr.streak;$("p-best").textContent=pr.best;
+  const h=pr.hist,S=$("p-spark"),W=300,H=70; S.setAttribute("viewBox",`0 0 ${W} ${H}`); S.setAttribute("preserveAspectRatio","none");
+  if(h.length<2){S.innerHTML=`<text x="4" y="40" fill="var(--muted)" font-size="12">Utviklingen vises når du har løst noen nøtter</text>`;return}
+  const mn=Math.min(...h)-20,mx=Math.max(...h)+20,x=i=>i/(h.length-1)*W,y=v=>H-6-(v-mn)/(mx-mn)*(H-12);
+  const pts=h.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  S.innerHTML=`<polygon points="0,${H} ${pts} ${W},${H}" fill="var(--accent)" opacity=".12"/><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="${x(h.length-1)}" cy="${y(h[h.length-1])}" r="3.5" fill="var(--accent)"/>`}
+$("p-reset").onclick=()=>{const row=$("p-resetrow");row.innerHTML=`<span>Starte på nytt med ny rating?</span><button class="btn small" id="p-reset-yes" type="button">Ja, nullstill</button><button class="btn small" id="p-reset-no" type="button">Avbryt</button>`;
+  $("p-reset-no").onclick=()=>{row.innerHTML="";row.appendChild(resetBtn)}; $("p-reset-yes").onclick=async()=>{P.profile=null;store.set(STORE_P,null); acctSet("puzzleprofile",null); row.innerHTML="";row.appendChild(resetBtn);
+    $("p-start").hidden=false;$("p-status").textContent="Velg startnivå for å begynne";$("p-delta").textContent="";P.cur=null;P.board.set({movable:null});pStats()}};
+const resetBtn=$("p-reset");
+
+/* =====================================================================
+   PLAY TAB
+   ===================================================================== */
+const Gm={record:{w:0,d:0,l:0},counted:false,chess:null,color:"w",rating:1500,over:false,thinking:false,engine:Engine(),board:null,flipped:false,token:0,choice:"w"};
+const STORE_G="spill-mot-bot";
+Gm.board=Board($("g-board"),{onMove:gMove});
+function levelFor(r){return{skill:Math.max(0,Math.min(20,Math.round((r-1000)/90))),depth:Math.max(1,Math.min(16,Math.round((r-600)/150)+1)),rand:r<1100?(1100-r)/1000*0.6:0}}
+function ratingDesc(r){return r<900?"Nybegynner: gjør mange feil og overser enkle trusler.":r<1300?"Hobbyspiller: kjenner reglene og grunnleggende taktikk.":r<1700?"Klubbspiller: solid, men kan feile i kompliserte stillinger.":r<2100?"Sterk klubbspiller: straffer de fleste feil.":r<2500?"Mesternivå: svært vanskelig å slå.":"Toppnivå: nesten feilfri."}
+function gSlider(){const r=+$("g-rating").value;$("g-ratingval").textContent="ca. "+r;$("g-ratingdesc").textContent=ratingDesc(r)}
+$("g-rating").addEventListener("input",gSlider); $("g-rating").addEventListener("change",()=>gSave()); gSlider();
+document.querySelectorAll(".seg [data-color]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".seg [data-color]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));Gm.choice=b.dataset.color;gSave()});
+function gClearEnd(){const e=$("g-board").querySelector(".endcard"); if(e) e.remove(); Gm.board.set({marks:{}})}
+function gNew(){gClearEnd(); Gm.token++; Gm.engine.stop(); Gm.rating=+$("g-rating").value;
+  Gm.counted=false; Gm.endedAt=null; Gm.gameId="b_"+Date.now(); Gm.color=Gm.choice==="r"?(Math.random()<.5?"w":"b"):Gm.choice; Gm.chess=new Chess(); Gm.over=false; Gm.flipped=Gm.color==="b";
+  $("g-after").hidden=true;$("g-confirm").hidden=true;$("g-msg").textContent="";$("g-msg").className="msg"; gSave(); gRender(true); gMaybeBot()}
+function gPgn(){const h=[`[Event "Parti mot Stockfish"]`,`[Date "${new Date(Gm.endedAt||Date.now()).toISOString().slice(0,10).replace(/-/g,".")}"]`,
+  `[White "${Gm.color==="w"?"Du":"Stockfish (ca. "+Gm.rating+")"}"]`,`[Black "${Gm.color==="b"?"Du":"Stockfish (ca. "+Gm.rating+")"}"]`,`[Result "${gResult()||"*"}"]`];
+  const c=new Chess(); const hist=Gm.chess.history(); let s=""; hist.forEach((m,i)=>{if(i%2===0)s+=(i/2+1)+". ";s+=m+" "}); return h.join("\n")+"\n\n"+s+(gResult()||"*")}
+function gResult(){const c=Gm.chess;if(!c)return null;if(Gm.resigned)return Gm.color==="w"?"0-1":"1-0";if(c.in_checkmate())return c.turn()==="w"?"0-1":"1-0";if(c.in_draw()||c.in_stalemate()||c.in_threefold_repetition())return"1/2-1/2";return null}
+function gStatus(){const c=Gm.chess; if(!c){$("g-status").textContent="Ingen parti i gang";$("g-turn").className="turnchip";return}
+  const t=c.turn(); $("g-turn").className="turnchip "+t; const res=gResult();
+  if(res){Gm.over=true; let s;
+    if(Gm.resigned) s="Du ga opp"; else if(c.in_checkmate()) s=(t===Gm.color)?"Sjakkmatt – boten vant":"Sjakkmatt – du vant!";
+    else if(c.in_stalemate()) s="Patt – remis"; else if(c.in_threefold_repetition()) s="Tre gangers gjentakelse – remis"; else if(c.insufficient_material()) s="For lite materiale – remis"; else s="Remis";
+    $("g-status").textContent=s; $("g-after").hidden=false; gCount(); gEndCard(s); return}
+  $("g-status").textContent=Gm.thinking?"Boten tenker …":t===Gm.color?(c.in_check()?"Sjakk! Din tur":"Din tur"):"Botens tur"}
+function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=c?c.history({verbose:true}):[]; const last=hist[hist.length-1];
+  Gm.board.set({fen:c?c.fen():new Chess().fen(),flipped:Gm.flipped,animate:!noAnim,last:last?{from:last.from,to:last.to}:null,movable:c&&!Gm.over&&!Gm.thinking&&c.turn()===Gm.color?Gm.color:null});
+  const mt=$("g-moves"); mt.innerHTML=""; (c?c.history():[]).forEach((m,i)=>{if(i%2===0){const n=document.createElement("span");n.className="n";n.textContent=(i/2+1)+". ";mt.appendChild(n)}mt.appendChild(document.createTextNode(m+" "))});
+  mt.scrollTop=mt.scrollHeight;
+  $("g-title").textContent=c?`Du (${Gm.color==="w"?"hvit":"svart"}) mot Stockfish, ca. ${Gm.rating}`:"Stockfish";
+  $("g-sub").textContent=c?"Klikk eller dra en brikke for å flytte.":"Velg styrke og farge, og start et parti.";
+  if(c){const fens=[new Chess().fen()];const t=new Chess();c.history().forEach(m=>{t.move(m);fens.push(t.fen())});showOpening($("g-opening"),openingInfo(fens))} else $("g-opening").hidden=true;
+  $("g-undo").disabled=!c||Gm.resigned||c.history().length<1; $("g-resign").disabled=!c||Gm.over; gStatus()}
+function gMove(from,to,promo){const c=Gm.chess;if(!c||Gm.over||c.turn()!==Gm.color)return; const m=c.move({from,to,promotion:promo||undefined}); if(!m)return;
+  gSave(); gRender(); gMaybeBot()}
+async function gMaybeBot(){const c=Gm.chess; if(!c||Gm.over||gResult()||c.turn()===Gm.color) return;
+  const tok=Gm.token; Gm.thinking=true; gRender(); const L=levelFor(Gm.rating), t0=Date.now(); let uci=null;
+  try{ if(Math.random()<L.rand){const ms=c.moves({verbose:true});const m=ms[Math.floor(Math.random()*ms.length)];uci=m.from+m.to+(m.promotion||"")}
+    else{const r=await Gm.engine.search(c.fen(),{depth:L.depth,skill:L.skill,multipv:1});uci=r.best}}
+  catch(e){Gm.thinking=false;$("g-msg").className="msg err";$("g-msg").textContent="Sjakkmotoren kunne ikke starte i denne nettleseren.";gRender();return}
+  if(tok!==Gm.token) return; const wait=700-(Date.now()-t0); if(wait>0) await sleep(wait); if(tok!==Gm.token) return;
+  Gm.thinking=false; if(uci&&uci!=="(none)") c.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||undefined}); gSave(); gRender()}
+function gEndReason(){const c=Gm.chess,t=c.turn(),side=t==="w"?"Hvit":"Svart";
+  if(Gm.resigned) return "Partiet er registrert som tap.";
+  if(c.in_checkmate()) return `${side} står i sjakk og har ingen lovlige trekk.`;
+  if(c.in_stalemate()) return `${side} står ikke i sjakk, men har ingen lovlige trekk. Det kalles patt, og partiet blir remis. Pass på at motstanderen alltid har et trekk når du leder stort.`;
+  if(c.in_threefold_repetition()) return "Samme stilling har oppstått tre ganger.";
+  if(c.insufficient_material()) return "Ingen av sidene har nok brikker igjen til å sette matt.";
+  return "Partiet ble remis etter 50-trekksregelen."}
+function gEndCard(title){ const el=$("g-board"); if(el.querySelector(".endcard")) return;
+  const c=Gm.chess; if(c.in_stalemate()||c.in_checkmate()){const g=c.board();let k=null;g.forEach((row,r)=>row.forEach((x,f)=>{if(x&&x.type==="k"&&x.color===c.turn())k="abcdefgh"[f]+(8-r)}));
+    if(k) Gm.board.set({marks:{[k]:"mated"}})}
+  const d=document.createElement("div"); d.className="endcard"; d.setAttribute("role","status");
+  d.innerHTML=`<b></b><p></p><div class="row"><button class="btn primary small" type="button" data-a="new">Nytt parti</button><button class="btn small" type="button" data-a="an">Analyser partiet</button><button class="btn small" type="button" data-a="x">Lukk</button></div>`;
+  d.querySelector("b").textContent=title; d.querySelector("p").textContent=gEndReason();
+  d.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a; if(!a) return; d.remove();
+    if(a==="new") $("g-new").click(); if(a==="an") $("g-analyse").click()});
+  d.addEventListener("pointerdown",e=>e.stopPropagation()); el.appendChild(d)}
+function gUncount(){const r=Gm.lastCounted; if(r&&Gm.record[r]>0) Gm.record[r]--; Gm.lastCounted=null; gRecord(); if(Gm.gameId) Games.remove(Gm.gameId)}
+function gArchive(){ if(!Gm.chess||!gResult()) return; if(!Gm.gameId) Gm.gameId="b_"+Date.now(); Gm.endedAt=Gm.endedAt||Date.now();
+  const old=Games.get(Gm.gameId); const pgn=gPgn(); if(old&&old.pgn===pgn) return;
+  Games.put({id:Gm.gameId,source:"bot",pgn,color:Gm.color,botRating:Gm.rating,result:gResult(),ended:Gm.endedAt});
+  if(!A.userPicked&&!A.running) aShow(Gm.gameId)} // the newest game is what the analysis tab opens on
+function gCount(){ if(Gm.counted) return; Gm.counted=true; const r=gResult(); const mine=Gm.color==="w"?"1-0":"0-1";
+  const k=r==="1/2-1/2"?"d":r===mine?"w":"l"; Gm.record[k]++; Gm.lastCounted=k; Gm.endedAt=Date.now(); gRecord(); gSave(); gArchive()}
+function gRecord(){const r=Gm.record||{w:0,d:0,l:0}; $("g-record").textContent=(r.w+r.d+r.l)?`Dine resultater mot boten: ${r.w} seire, ${r.d} remis, ${r.l} tap`:""}
+function gSave(){const d={gameId:Gm.gameId||null,endedAt:Gm.endedAt||null,pgn:Gm.chess?Gm.chess.pgn():"",color:Gm.color,rating:Gm.rating,resigned:!!Gm.resigned,active:!!Gm.chess,
+    pick:+$("g-rating").value,choice:Gm.choice,record:Gm.record,updated:Date.now()};
+  store.set(STORE_G,d); acctSet("botgame",d)}
+async function gLoad(){ gRender(true); const remote=await acctGet("botgame"); const s=newer(remote||null,store.get(STORE_G)); if(!s) return;
+  if(Gm.chess&&Gm.chess.history().length) return; // user already started playing while we loaded
+  try{ Gm.record=Object.assign({w:0,d:0,l:0},s.record||{}); if(s.choice){Gm.choice=s.choice;document.querySelectorAll(".seg [data-color]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.color===s.choice?"true":"false"))}
+    $("g-rating").value=s.pick||s.rating||1500; gSlider();
+    if(s.active!==false&&s.pgn!==undefined){const c=new Chess(); if(s.pgn) c.load_pgn(s.pgn); Gm.chess=c; Gm.color=s.color; Gm.rating=s.rating; Gm.resigned=!!s.resigned; Gm.flipped=s.color==="b";
+      Gm.gameId=s.gameId||("b_"+(s.updated||Date.now())); Gm.endedAt=s.endedAt||s.updated||null}
+    Gm.counted=!!(Gm.chess&&gResult()); if(Gm.counted){await gamesReady; if(!Games.get(Gm.gameId)) gArchive()} gRender(true); gRecord(); gMaybeBot()}catch(e){gRender(true)}}
+$("g-new").onclick=()=>{Gm.resigned=false;gNew()};
+$("g-flip").onclick=()=>{Gm.flipped=!Gm.flipped;gRender()};
+$("g-undo").onclick=()=>{const c=Gm.chess;if(!c||Gm.resigned)return; if(Gm.over&&Gm.counted){Gm.counted=false;gUncount()} gClearEnd(); Gm.token++; Gm.engine.stop(); Gm.thinking=false;
+  c.undo(); if(c.turn()!==Gm.color) c.undo(); gSave(); gRender(); gMaybeBot()};
+$("g-resign").onclick=()=>{$("g-confirm").hidden=false};
+$("g-no").onclick=()=>{$("g-confirm").hidden=true};
+$("g-yes").onclick=()=>{$("g-confirm").hidden=true;Gm.token++;Gm.engine.stop();Gm.thinking=false;Gm.resigned=true;gSave();gRender()};
+$("g-analyse").onclick=async()=>{await gamesReady; gArchive(); const g=Games.get(Gm.gameId); location.hash="#analyse";
+  if(g&&g.analysis) aShow(g.id); else aRun(gPgn(),{gameId:g?g.id:undefined,flip:Gm.color==="b"})};
+
+/* =====================================================================
+   MY GAMES — finished games vs the bot and PGNs you add, with saved analysis.
+   Each game is its own document under data/users/<id>/ (kind "game"); browser storage is a backup.
+   ===================================================================== */
+const STORE_GL="mine-partier", STORE_SEL="valgt-parti";
+const EXGAME={kind:"game",id:"ex_maria",source:"example",color:"w",ended:Date.parse("2026-10-27T19:50:00+01:00"),pgn:EX.pgn,result:"1-0",
+  analysis:{depth:EX.depth,evals:[EX.start].concat(EX.res.map(r=>r.ev)),res:EX.res.map(r=>Object.assign({},r)),acc:{w:92.9,b:89.6}}};
+const clean=g=>JSON.parse(JSON.stringify(g,(k,v)=>k[0]==="_"?undefined:v));
+const Games={list:[],
+  all(){return this.list.slice().sort((a,b)=>(b.ended||0)-(a.ended||0)).concat([EXGAME])},
+  get(id){return id===EXGAME.id?EXGAME:this.list.find(g=>g.id===id)},
+  persist(){ const L=this.list.slice().sort((a,b)=>(b.ended||0)-(a.ended||0)).slice(0,150).map(clean); store.set(STORE_GL,L)},
+  put(g){ g.kind="game"; g.updated=Date.now(); const i=this.list.findIndex(x=>x.id===g.id); if(i>=0)this.list[i]=g; else this.list.push(g);
+    this.persist(); acctSet(g.id,clean(g)); aGames()},
+  remove(id){ this.list=this.list.filter(g=>g.id!==id); this.persist(); acctSet(id,null); aGames()},
+  setAnalysis(id,an){ const g=this.get(id); if(!g||g.source==="example") return; g.analysis=JSON.parse(JSON.stringify(an)); this.put(g)},
+  addPgn(text,parsed){ const key=parsed.moves.map(m=>m.san).join(" "); let h=0; for(const ch of key){h=(h*31+ch.charCodeAt(0))|0}
+    const id="p_"+(h>>>0).toString(36)+"_"+parsed.moves.length; if(!this.get(id)){
+      const H=parsed.headers; const mine=/^(du|bentarne|bent arne)$/i;
+      this.put({id,source:"pgn",pgn:text,ended:Date.now(),result:H.Result||"*",color:mine.test(H.Black||"")?"b":mine.test(H.White||"")?"w":null})} return id},
+  remember(id){store.set(STORE_SEL,id)},
+  async load(){ const local=store.get(STORE_GL)||[]; const remote=await acctList(); const byId={};
+    for(const g of local) byId[g.id]=g;
+    if(remote) for(const g of remote){const l=byId[g.id]; if(!l||(g.updated||0)>=(l.updated||0)) byId[g.id]=g}
+    this.list=Object.values(byId);
+    if(remote){const rid=new Set(remote.map(g=>g.id)); for(const g of local) if(!rid.has(g.id)) acctSet(g.id,clean(g))} // push games only this browser had
+    this.persist()}};
+async function acctList(){ if(!await Acct.ready) return undefined;
+  try{const snap=await withTimeout(Acct.db.collection(`data/users/${Acct.uid}`).where("kind","==","game").limit(500).get(),10000);
+    return snap.docs.map(d=>JSON.parse(JSON.stringify(d.data())))}catch(e){return undefined}}
+function gameMeta(g){ let parsed=null; try{parsed=g._p||(g._p=parsePGN(g.pgn))}catch(e){}
+  const H=parsed?parsed.headers:{}; const plies=parsed?parsed.moves.length:0;
+  let op=g._op; if(!op&&parsed&&OPENINGS){op=g._op=openingInfo([parsed.startFen,...parsed.moves.map(m=>m.fen)])}
+  const r=g.result||H.Result||"*"; let cls="n",txt=r.replace("1/2-1/2","½–½").replace("-","–");
+  if(g.color&&r!=="*"){const mine=g.color==="w"?"1-0":"0-1"; cls=r==="1/2-1/2"?"d":r===mine?"w":"l"; txt=cls==="w"?"Seier":cls==="d"?"Remis":"Tap"}
+  if(r==="*"){txt="Uferdig"}
+  const W=H.White||"Hvit",B=H.Black||"Svart";
+  return {title:`${W} – ${B}`,sub:[op&&op.name,`${Math.ceil(plies/2)} trekk`].filter(Boolean).join(" · "),cls,txt}}
+function fmtDate(t){ if(!t) return ""; const d=new Date(t),now=new Date(); const same=d.toDateString()===now.toDateString();
+  const y=new Date(now); y.setDate(now.getDate()-1);
+  const hm=d.toLocaleTimeString("no-NO",{hour:"2-digit",minute:"2-digit"});
+  return same?`I dag<br>${hm}`:d.toDateString()===y.toDateString()?`I går<br>${hm}`:d.toLocaleDateString("no-NO",{day:"numeric",month:"short"})+(d.getFullYear()!==now.getFullYear()?" "+d.getFullYear():"")}
+function aGames(scroll){ const el=$("a-games"); if(!el) return; const L=Games.all(); el.innerHTML="";
+  const n=L.length-1; $("a-gcount").textContent=`${L.length} ${L.length===1?"parti":"partier"}`;
+  if(!n){const e=document.createElement("div");e.className="gempty";e.textContent="Når du har spilt ferdig et parti mot boten, havner det her. Du kan også legge til partier med PGN.";el.appendChild(e)}
+  for(const g of L){ const m=gameMeta(g), sel=g.id===A.gameId, an=!!(g.analysis&&g.analysis.res);
+    const row=document.createElement("div"); row.className="grow"; row.setAttribute("role","option"); row.setAttribute("aria-selected",sel?"true":"false"); row.tabIndex=0; row.dataset.id=g.id;
+    row.innerHTML=`<span class="gd">${g.source==="example"?"chess.com":fmtDate(g.ended)}</span><span class="gt"><b></b><span></span></span><span class="res ${m.cls}"></span><span class="gs"></span>`;
+    row.querySelector(".gt b").textContent=m.title; row.querySelector(".gt span").textContent=m.sub; row.querySelector(".res").textContent=m.txt;
+    const gs=row.querySelector(".gs"); const myAcc=an&&g.analysis.acc&&g.color?g.analysis.acc[g.color]:null;
+    if(sel&&A.running){gs.textContent="Analyserer …"}
+    else if(sel&&!an){const b=document.createElement("button");b.className="btn primary";b.type="button";b.textContent="Analyser";b.onclick=e=>{e.stopPropagation();aRun(g.pgn,{gameId:g.id})};gs.appendChild(b)}
+    else if(an){gs.innerHTML=myAcc!=null?`Nøyaktighet <span class="acc1">${myAcc.toFixed(1)}</span>`:"Analysert"}
+    else gs.textContent="Ikke analysert";
+    el.appendChild(row);
+    if(sel&&scroll) row.scrollIntoView({block:"nearest"})}}
+$("a-games").addEventListener("click",e=>{const r=e.target.closest(".grow"); if(r){A.userPicked=true; if(r.dataset.id!==A.gameId) aShow(r.dataset.id)}});
+$("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); if(!r) return;
+  A.userPicked=true;
+  if(e.key==="Enter"||e.key===" "){e.preventDefault(); if(r.dataset.id!==A.gameId) aShow(r.dataset.id)}
+  else if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault(); const n=e.key==="ArrowDown"?r.nextElementSibling:r.previousElementSibling; if(n&&n.classList.contains("grow")){n.focus(); aShow(n.dataset.id); $("a-games").querySelector(`[data-id="${n.dataset.id}"]`).focus()}}
+  e.stopPropagation()});
+
+/* =====================================================================
+   ROUTER + KEYS
+   ===================================================================== */
+const TABS=["analyse","notter","spill"];
+function route(){const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):"analyse";
+  TABS.forEach(x=>{$("tab-"+x).hidden=x!==t;document.querySelector(`.tabs [data-tab="${x}"]`).setAttribute("aria-current",x===t?"page":"false")});
+  if(t==="notter") pInit(); if(t==="analyse") sizeBar()}
+window.addEventListener("hashchange",route);
+document.addEventListener("keydown",e=>{if(/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName))return; if($("tab-analyse").hidden) return;
+  if(e.key==="ArrowRight"){aGo(A.cur+1);e.preventDefault()}else if(e.key==="ArrowLeft"){aGo(A.cur-1);e.preventDefault()}else if(e.key==="Home")aGo(0);else if(e.key==="End")aGo(A.G.moves.length)});
+
+openingsReady.then(()=>{ if(A.G){A.G.op=openingInfo(A.G.fens);aHeader()} if(Gm.chess) gRender(true); aGames()});
+// show the browser's copy at once, then refresh from the account
+Games.list=(store.get(STORE_GL)||[]);
+function aStart(){ if(!A.running&&!A.userPicked) aShow(Games.all()[0].id)} // always open on the most recent game
+aStart();
+const gamesReady=Games.load().then(()=>{ if(!A.running){ const before=A.gameId; aStart(); if(A.gameId===before) aGames() } });
+gLoad(); route(); sizeBar();
+</script>
+
+</body>
+</html>
