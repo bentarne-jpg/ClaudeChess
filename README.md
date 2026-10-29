@@ -1,6 +1,7 @@
 # Sjakkverkstedet
 
-A chess app that runs entirely in the browser, with no server of its own:
+A chess app that runs entirely in the browser, with no server of its own. It opens on a home page
+with one card per module:
 
 - **Analyse** – paste a PGN or pick a game from *Mine partier*. Stockfish rates every move
   (Brilliant, Great, Best, Excellent, Good, Book, Inaccuracy, Mistake, Blunder), with an

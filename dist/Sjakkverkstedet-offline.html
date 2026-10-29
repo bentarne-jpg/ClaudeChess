@@ -16,6 +16,7 @@
   --bar-white:#f6f6f2; --bar-black:#2a2f2d; --arrow:rgba(40,120,200,.78); --err:#b3261e; --ok:#3f7d22;
   --c-brilliant:#1a9e98; --c-great:#5383ad; --c-best:#6aa13c; --c-excellent:#88ad3e; --c-good:#7f9d79;
   --c-book:#9a7a56; --c-forced:#7f9d79; --c-inaccuracy:#d9a812; --c-mistake:#e8833a; --c-blunder:#d93a2b; --c-pending:#a3aca8;
+  --m-an:#2f5d8a; --m-pz:#2c7a66; --m-pl:#a0582a;
   --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
@@ -24,12 +25,14 @@
   --bg:#141917; --surface:#1d2321; --ink:#e7ece9; --muted:#9aa7a1; --line:#313a37; --field:#151a18;
   --accent:#7fb0de; --on-accent:#0d1a26; --sq-light:#cfcab1; --sq-dark:#6b8a70; --hl:rgba(246,218,90,.5);
   --sel:rgba(127,176,222,.45); --dot:rgba(10,14,12,.4); --check:rgba(242,110,98,.8); --wrong:rgba(242,110,98,.5); --right:rgba(140,200,90,.5);
-  --bar-white:#eceee8; --bar-black:#0c0f0e; --arrow:rgba(95,165,235,.82); --err:#f2867e; --ok:#9ccf7a; --c-pending:#5d6763; color-scheme:dark}}
+  --bar-white:#eceee8; --bar-black:#0c0f0e; --arrow:rgba(95,165,235,.82); --err:#f2867e; --ok:#9ccf7a; --c-pending:#5d6763;
+  --m-an:#7fb0de; --m-pz:#6cc4ad; --m-pl:#e3a06c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141917; --surface:#1d2321; --ink:#e7ece9; --muted:#9aa7a1; --line:#313a37; --field:#151a18;
   --accent:#7fb0de; --on-accent:#0d1a26; --sq-light:#cfcab1; --sq-dark:#6b8a70; --hl:rgba(246,218,90,.5);
   --sel:rgba(127,176,222,.45); --dot:rgba(10,14,12,.4); --check:rgba(242,110,98,.8); --wrong:rgba(242,110,98,.5); --right:rgba(140,200,90,.5);
-  --bar-white:#eceee8; --bar-black:#0c0f0e; --arrow:rgba(95,165,235,.82); --err:#f2867e; --ok:#9ccf7a; --c-pending:#5d6763; color-scheme:dark}
+  --bar-white:#eceee8; --bar-black:#0c0f0e; --arrow:rgba(95,165,235,.82); --err:#f2867e; --ok:#9ccf7a; --c-pending:#5d6763;
+  --m-an:#7fb0de; --m-pz:#6cc4ad; --m-pl:#e3a06c; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
@@ -87,7 +90,10 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .progress .txt{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 
 /* summary */
-.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.summary .card{padding:10px 12px;gap:6px}
+.summary .acc{font-size:20px}
+.summary .chip{font-size:12px}
 .side-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .side-head b{font-family:var(--f-display);font-stretch:112%;font-weight:600;font-size:17px;overflow-wrap:anywhere}
 .acc{font-family:var(--f-mono);font-weight:700;font-size:24px;white-space:nowrap}
@@ -168,6 +174,43 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .legend{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 
+/* modules: each tab takes its own accent */
+#tab-analyse{--accent:var(--m-an)} #tab-notter{--accent:var(--m-pz)} #tab-spill{--accent:var(--m-pl)}
+.tab > header{border-left:4px solid var(--accent);padding-left:14px}
+.tab > header .eyebrow{color:var(--accent)}
+.tabs a .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.tabs a[data-tab="analyse"] .dot{background:var(--m-an)} .tabs a[data-tab="notter"] .dot{background:var(--m-pz)} .tabs a[data-tab="spill"] .dot{background:var(--m-pl)}
+.tabs a[data-tab="analyse"][aria-current="page"]{background:var(--m-an)} .tabs a[data-tab="notter"][aria-current="page"]{background:var(--m-pz)} .tabs a[data-tab="spill"][aria-current="page"]{background:var(--m-pl)}
+.tabs a[aria-current="page"] .dot{background:var(--on-accent)}
+.brand{text-decoration:none;color:var(--ink)}
+.brand:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+/* home */
+.hero{display:grid;gap:6px;padding-block:18px 4px}
+.hero h1{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:clamp(30px,5vw,46px);letter-spacing:-.015em;margin:0;text-wrap:balance}
+.hero p{margin:0;color:var(--muted);font-size:17px;max-width:60ch}
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.mod{--c:var(--accent);display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;padding:18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);text-decoration:none;border-top:5px solid var(--c);transition:transform .15s,box-shadow .15s}
+.mod:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.10)}
+.mod:focus-visible{outline:2px solid var(--c);outline-offset:3px}
+.mod.an{--c:var(--m-an)} .mod.pz{--c:var(--m-pz)} .mod.pl{--c:var(--m-pl)}
+.mod .mi{width:54px;height:54px;border-radius:12px;background:var(--sq-light);display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--c)}
+.mod .mi img{width:40px;height:40px}
+.mod h2{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:22px;margin:0}
+.mod p{margin:0;color:var(--muted)}
+.mod .mst{font-size:14px;padding:8px 10px;border-radius:8px;background:var(--bg);color:var(--ink);min-height:2.6em;display:flex;align-items:center}
+.mod .mgo{font-weight:700;color:var(--c)}
+@media (prefers-reduced-motion:reduce){.mod{transition:none}.mod:hover{transform:none}}
+/* collapsibles */
+.fold > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fold > summary::-webkit-details-marker{display:none}
+.fold > summary .chev{margin-left:auto;font-weight:700;font-size:14px;color:var(--accent)}
+.fold[open] > summary .chev::after{content:"Skjul"} .fold:not([open]) > summary .chev::after{content:attr(data-closed)}
+.fold > summary h2{margin:0}
+.fold .fbody{display:grid;gap:10px;margin-top:10px}
+.mini{font-size:13px}
+.mini > summary{cursor:pointer;color:var(--muted);font-weight:600}
+.mini[open] > summary{margin-bottom:8px}
 /* game list */
 .ahead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 .ahead-text{min-width:0;flex:1 1 320px}
@@ -227,7 +270,7 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .stat span{font-size:12px;color:var(--muted)}
 .spark{width:100%;height:70px;display:block}
 .plog{display:grid;gap:2px;font-size:13.5px}
-.plog .eyebrow{margin:4px 0 2px}
+.plog .eyebrow{display:none}
 .plrow{display:grid;grid-template-columns:56px 1fr auto;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
 .plrow .delta{font-size:13.5px}
 .pstatus{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
@@ -270,13 +313,27 @@ footer p{margin:0}
 <body>
 <div class="wrap">
   <div class="appbar">
-    <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="3" fill="var(--sq-light)"/><rect x="2" y="2" width="10" height="10" rx="3" fill="var(--sq-dark)"/><rect x="12" y="12" width="10" height="10" rx="3" fill="var(--sq-dark)"/></svg>Sjakkverkstedet</div>
+    <a class="brand" href="#hjem" aria-label="Sjakkverkstedet – til forsiden"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="3" fill="var(--sq-light)"/><rect x="2" y="2" width="10" height="10" rx="3" fill="var(--sq-dark)"/><rect x="12" y="12" width="10" height="10" rx="3" fill="var(--sq-dark)"/></svg>Sjakkverkstedet</a>
     <nav class="tabs" aria-label="Seksjoner">
-      <a href="#analyse" data-tab="analyse">Analyse</a>
-      <a href="#notter" data-tab="notter">Sjakknøtter</a>
-      <a href="#spill" data-tab="spill">Spill mot bot</a>
+      <a href="#hjem" data-tab="hjem">Hjem</a>
+      <a href="#analyse" data-tab="analyse"><span class="dot"></span>Analyse</a>
+      <a href="#notter" data-tab="notter"><span class="dot"></span>Sjakknøtter</a>
+      <a href="#spill" data-tab="spill"><span class="dot"></span>Spill mot bot</a>
     </nav>
   </div>
+
+  <!-- ============ HJEM ============ -->
+  <section class="tab" id="tab-hjem" hidden>
+    <div class="hero">
+      <h1>Velkommen til Sjakkverkstedet</h1>
+      <p>Velg hva du vil gjøre. Alt kjører i nettleseren din, med Stockfish som motor.</p>
+    </div>
+    <nav class="mods" aria-label="Moduler">
+      <a class="mod pl" href="#spill"><span class="mi"><img id="h-ic-pl" alt=""></span><h2>Spill mot bot</h2><p>Spill mot Stockfish med valgfri styrke og klokke.</p><span class="mst" id="h-st-pl">…</span><span class="mgo">Spill →</span></a>
+      <a class="mod pz" href="#notter"><span class="mi"><img id="h-ic-pz" alt=""></span><h2>Sjakknøtter</h2><p>Finn det beste trekket. Nøttene følger nivået ditt.</p><span class="mst" id="h-st-pz">…</span><span class="mgo">Løs nøtter →</span></a>
+      <a class="mod an" href="#analyse"><span class="mi"><img id="h-ic-an" alt=""></span><h2>Analyse</h2><p>Se hvert trekk vurdert, fra dine partier eller en PGN.</p><span class="mst" id="h-st-an">…</span><span class="mgo">Analyser →</span></a>
+    </nav>
+  </section>
 
   <!-- ============ ANALYSE ============ -->
   <section class="tab" id="tab-analyse" hidden>
@@ -294,11 +351,11 @@ footer p{margin:0}
         </label>
       </div>
     </header>
-    <section class="card games" aria-label="Mine partier">
-      <div class="games-head"><h2>Mine partier</h2><span class="hint" id="a-gcount"></span></div>
+    <details class="card fold games" id="a-pick">
+      <summary><h2>Mine partier</h2><span class="hint" id="a-gcount"></span><span class="chev" data-closed="Bytt parti"></span></summary>
+      <div class="fbody">
       <div class="glist" id="a-games" role="listbox" aria-label="Velg parti"></div>
-    </section>
-    <details class="card intake" id="a-intake">
+    <details class="mini intake" id="a-intake">
       <summary>Legg til et parti med PGN</summary>
       <div class="body">
         <label for="a-pgn" class="hint">Lim inn PGN-en (på chess.com: <b>Del</b> → <b>PGN</b> → Kopier). Kommentarer, klokketider og varianter blir ignorert.</label>
@@ -313,11 +370,12 @@ footer p{margin:0}
         <p class="msg" id="a-msg" role="status"></p>
       </div>
     </details>
+      </div>
+    </details>
     <div class="progress" id="a-progress" hidden>
       <div class="track"><div class="fill" id="a-pfill"></div></div>
       <div class="txt"><span id="a-ptxt">Laster sjakkmotoren …</span><button class="btn small" id="a-stop" type="button">Stopp</button></div>
     </div>
-    <section class="summary" id="a-summary" aria-label="Oppsummering"></section>
     <section class="main">
       <div class="boardcol">
         <div class="boardrow">
@@ -340,9 +398,10 @@ footer p{margin:0}
         </div>
       </div>
       <div class="panel">
+        <section class="summary" id="a-summary" aria-label="Oppsummering"></section>
         <div class="card mcard" id="a-card" aria-live="polite"></div>
         <div class="list"><table><tbody id="a-tbody"></tbody></table></div>
-        <div class="legend" id="a-legend"></div>
+        <details class="mini"><summary>Hva betyr merkene?</summary><div class="legend" id="a-legend"></div></details>
       </div>
     </section>
   </section>
@@ -352,7 +411,7 @@ footer p{margin:0}
     <header>
       <p class="eyebrow">Sjakknøtter</p>
       <h1>Finn det beste trekket</h1>
-      <p>Nøttene tilpasser seg ratingen din. Løser du dem, blir de gradvis vanskeligere.</p>
+      <p>Løser du nøttene, blir de gradvis vanskeligere.</p>
     </header>
     <section class="main">
       <div class="boardcol">
@@ -381,7 +440,7 @@ footer p{margin:0}
           </div>
           <p class="msg" id="p-msg" role="status"></p>
         </div>
-        <div class="card">
+        <div class="card" id="p-ratingcard">
           <div class="rating">
             <div><p class="eyebrow">Din nøtterating</p><div class="big" id="p-rating">–</div></div>
             <div class="delta" id="p-delta"></div>
@@ -393,10 +452,12 @@ footer p{margin:0}
             <div class="stat"><b id="p-streak">0</b><span>På rad</span></div>
             <div class="stat"><b id="p-best">–</b><span>Beste rating</span></div>
           </div>
-          <div class="plog" id="p-log"></div>
-          <p class="hint">Løser du en nøtt, går ratingen opp. Bommer du, går den ned med omtrent halvparten så mye. Hvor mye avhenger av nøttens rating: en vanskelig nøtt gir mer når du løser den, og en lett nøtt koster mer når du bommer.</p>
-          <p class="hint" id="p-store"></p>
-          <div class="confirm" id="p-resetrow"><button class="btn small" id="p-reset" type="button">Nullstill rating</button></div>
+          <details class="mini"><summary>Siste nøtter</summary><div class="plog" id="p-log"></div></details>
+          <details class="mini"><summary>Slik regnes ratingen</summary>
+            <p class="hint">Løser du en nøtt, går ratingen opp. Bommer du, går den ned med omtrent halvparten så mye. En vanskelig nøtt gir mer når du løser den, og en lett nøtt koster mer når du bommer. Hint og «Vis løsning» teller som bom.</p>
+            <p class="hint" id="p-store"></p>
+            <div class="confirm" id="p-resetrow"><button class="btn small" id="p-reset" type="button">Nullstill rating</button></div>
+          </details>
         </div>
       </div>
     </section>
@@ -421,16 +482,13 @@ footer p{margin:0}
           <button id="g-prev" aria-label="Forrige trekk">&lt;</button>
           <button id="g-next" aria-label="Neste trekk">&gt;</button>
           <button id="g-last" aria-label="Til siste trekk">&gt;|</button>
-        </div>
-        <div class="controls">
-          <button id="g-undo" class="txt">Angre trekk</button>
-          <button id="g-resign" class="txt">Gi opp</button>
-          <button id="g-flip" class="txt">Snu brettet</button>
+          <button id="g-flip" class="txt" aria-label="Snu brettet">Snu</button>
         </div>
       </div>
       <div class="panel">
-        <div class="card">
-          <h2>Nytt parti</h2>
+        <div class="card" id="g-setup">
+          <div class="row" style="justify-content:space-between"><h2>Nytt parti</h2><button class="btn small" id="g-setupclose" type="button" hidden>Tilbake til partiet</button></div>
+          <p class="msg err" id="g-setupwarn" hidden>Partiet som pågår, avsluttes uten resultat når du starter et nytt.</p>
           <div class="slider">
             <div class="val"><label for="g-rating">Botens styrke</label><b id="g-ratingval">1500</b></div>
             <input type="range" id="g-rating" min="600" max="2800" step="100" value="1500">
@@ -460,11 +518,12 @@ footer p{margin:0}
           <div class="row"><button class="btn primary" id="g-new" type="button">Start nytt parti</button></div>
           <p class="hint" id="g-record"></p>
         </div>
-        <div class="card">
+        <div class="card" id="g-game">
           <div class="pstatus"><span class="turnchip" id="g-turn"></span><span id="g-status">Ingen parti i gang</span></div>
           <p class="msg" id="g-msg" role="status"></p>
           <pre class="movetext" id="g-moves"></pre>
-          <div class="row" id="g-after" hidden><button class="btn primary" id="g-analyse" type="button">Analyser partiet</button></div>
+          <div class="row" id="g-actions"><button class="btn small" id="g-undo" type="button">Angre trekk</button><button class="btn small" id="g-resign" type="button">Gi opp</button><button class="btn small" id="g-showsetup" type="button">Nytt parti</button></div>
+          <div class="row" id="g-after" hidden><button class="btn primary" id="g-analyse" type="button">Analyser partiet</button><button class="btn" id="g-again" type="button">Nytt parti</button></div>
           <div class="confirm" id="g-confirm" hidden><span>Vil du gi opp partiet?</span><button class="btn small" id="g-yes" type="button">Ja, gi opp</button><button class="btn small" id="g-no" type="button">Fortsett</button></div>
         </div>
       </div>
@@ -475,7 +534,7 @@ footer p{margin:0}
     <p data-for="analyse">Bla med <span class="kbd">←</span> og <span class="kbd">→</span>, klikk på et trekk eller i grafen. Trekkene merkes etter hvor mye vinnersjansen endrer seg, slik chess.com gjør. Åpningsnavn fra lichess-org/chess-openings.</p>
     <p data-for="notter">Nøttene kommer fra Lichess' åpne nøttedatabase (CC0): 24 595 nøtter fra 400 til 3166 i rating. Ratingen din er foreløpig, merket med «?», de første 10 nøttene.</p>
     <p data-for="spill">Bla i partiet med <span class="kbd">←</span> og <span class="kbd">→</span> eller ved å klikke på et trekk. Det endrer ikke partiet, og klokken går videre. Botens styrke er omtrentlig.</p>
-    <p>Sjakkmotor: Stockfish 10 (GPL), som kjører i nettleseren din. Brikker: cburnett.</p>
+    <p>Sjakkmotor: Stockfish 10 (GPL), som kjører i nettleseren din. Åpninger og nøtter fra Lichess (CC0). Brikker: cburnett.</p>
   </footer>
 </div>
 
@@ -2492,10 +2551,10 @@ function aShow(id){ const g=Games.get(id); if(!g) return false; A.job++; A.engin
 /* Analyse the selected game (or a new PGN) and store the result with the game. */
 async function aRun(text,o={}){
   const msg=$("a-msg"); msg.className="msg"; msg.textContent=""; let parsed;
-  try{parsed=parsePGN(text)}catch(e){msg.className="msg err";msg.textContent=e.message;$("a-intake").open=true;return}
+  try{parsed=parsePGN(text)}catch(e){msg.className="msg err";msg.textContent=e.message;$("a-pick").open=true;$("a-intake").open=true;return}
   const depth=+$("a-depth").value, my=++A.job; A.engine.stop(); await openingsReady;
   const id=o.gameId||Games.addPgn(text,parsed); A.gameId=id; Games.remember(id);
-  aNewGame(parsed,{depth,pgn:text,flip:o.flip!==undefined?o.flip:(Games.get(id)||{}).color==="b"}); $("a-intake").open=false; aGames(true);
+  aNewGame(parsed,{depth,pgn:text,flip:o.flip!==undefined?o.flip:(Games.get(id)||{}).color==="b"}); $("a-intake").open=false; $("a-pick").open=false; aGames(true);
   A.running=true; aActBtn(); const G=A.G,N=G.moves.length,total=N+1,t0=Date.now(); $("a-progress").hidden=false; aProg(0,total,"Laster sjakkmotoren …");
   try{await A.engine.newGame()}catch(e){$("a-ptxt").textContent="Sjakkmotoren kunne ikke starte i denne nettleseren.";return}
   for(let i=0;i<=N;i++){ if(my!==A.job) return; aProg(i,total,`Analyserer stilling ${i+1} av ${total} · dybde ${depth}`);
@@ -2680,7 +2739,7 @@ function pLog(){const el=$("p-log"),L=(P.profile&&P.profile.log)||[]; el.innerHT
   L.slice().reverse().forEach(x=>{const r=document.createElement("div");r.className="plrow";
     r.innerHTML=`<span class="mono"></span><span></span><span class="mono delta ${x.d>=0?"up":"down"}"></span>`;
     r.children[0].textContent=x.r; r.children[1].textContent=x.why; r.children[2].textContent=(x.d>=0?"+":"−")+Math.abs(x.d); el.appendChild(r)})}
-function pStats(){const pr=P.profile; if(!pr){$("p-rating").textContent="–";["p-solved","p-failed","p-streak"].forEach(i=>$(i).textContent="0");$("p-best").textContent="–";$("p-prating").textContent="–";$("p-log").innerHTML="";$("p-msg").textContent="";$("p-turn").className="turnchip";
+function pStats(){const pr=P.profile; $("p-ratingcard").hidden=$("p-puzzle").hidden=!pr; if(!pr){$("p-rating").textContent="–";["p-solved","p-failed","p-streak"].forEach(i=>$(i).textContent="0");$("p-best").textContent="–";$("p-prating").textContent="–";$("p-log").innerHTML="";$("p-msg").textContent="";$("p-turn").className="turnchip";
   P.board.set({fen:new Chess().fen(),flipped:false,last:null,movable:null,marks:{}});$("p-spark").innerHTML=`<text x="4" y="40" fill="var(--muted)" font-size="12">Utviklingen vises når du har løst noen nøtter</text>`;return}
   $("p-rating").innerHTML=`${pr.rating}${pr.games<10?"<small>?</small>":""}`; $("p-rating").title=pr.games<10?"Foreløpig rating (under 10 nøtter)":"";
   pLog(); $("p-solved").textContent=pr.solved;$("p-failed").textContent=pr.failed;$("p-streak").textContent=pr.streak;$("p-best").textContent=pr.best;
@@ -2800,7 +2859,7 @@ function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=
   const live=Gm.view===null; const shown=live?{fen:c?c.fen():new Chess().fen(),last:hist[n-1]}:gViewFen(Gm.view);
   Gm.board.set({fen:shown.fen,flipped:Gm.flipped,animate:!noAnim,last:shown.last?{from:shown.last.from,to:shown.last.to}:null,
     movable:live&&c&&!Gm.over&&!Gm.thinking&&c.turn()===Gm.color?Gm.color:null});
-  const mt=$("g-moves"); mt.innerHTML=""; const at=live?n:Gm.view;
+  const mt=$("g-moves"); mt.innerHTML=""; mt.hidden=!n; const at=live?n:Gm.view;
   (c?c.history():[]).forEach((m,i)=>{if(i%2===0){const k=document.createElement("span");k.className="n";k.textContent=(i/2+1)+". ";mt.appendChild(k)}
     const b=document.createElement("button");b.type="button";b.className="gm"+(i+1===at?" on":"");b.dataset.ply=i+1;b.textContent=m;mt.appendChild(b);mt.appendChild(document.createTextNode(" "))});
   if(live) mt.scrollTop=mt.scrollHeight; else {const on=mt.querySelector(".gm.on"); if(on) on.scrollIntoView({block:"nearest"})}
@@ -2808,9 +2867,14 @@ function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=
     $("g-viewtxt").textContent=`Du ser på ${mv}. Partiet går videre${!Gm.over&&c.turn()===Gm.color?" – det er din tur":""}.`}
   $("g-first").disabled=$("g-prev").disabled=!c||at===0; $("g-last").disabled=$("g-next").disabled=!c||live;
   $("g-title").textContent=c?`Du (${Gm.color==="w"?"hvit":"svart"}) mot Stockfish, ca. ${Gm.rating}`:"Stockfish";
-  $("g-sub").textContent=!c?"Velg styrke, farge og tid, og start et parti.":Gm.over?"Partiet er slutt.":"Klikk eller dra en brikke for å flytte.";
+  $("g-sub").textContent=!c?"Velg styrke, farge og tid, og start et parti.":Gm.over?"Partiet er slutt.":(Gm.clock?tcLong(Gm.clock.tc)+" · ":"")+"Klikk eller dra en brikke for å flytte.";
   if(c){const fens=[new Chess().fen()];const t=new Chess();c.history().forEach(m=>{t.move(m);fens.push(t.fen())});showOpening($("g-opening"),openingInfo(fens))} else $("g-opening").hidden=true;
-  $("g-undo").disabled=!c||Gm.resigned||c.history().length<1; $("g-resign").disabled=!c||Gm.over; gStatus(); clockSync(); clockDraw(); tcRender()}
+  $("g-undo").disabled=!c||Gm.resigned||c.history().length<1; $("g-resign").disabled=!c||Gm.over; gStatus(); clockSync(); clockDraw(); tcRender(); gPanels()}
+/* Show the setup card only when it is needed: no game, a finished game, or when asked for. */
+Gm.setupOpen=false;
+function gPanels(){ const c=Gm.chess, live=!!(c&&!Gm.over);
+  $("g-setup").hidden=live&&!Gm.setupOpen; $("g-game").hidden=!c; $("g-actions").hidden=!live;
+  $("g-setupclose").hidden=!(live&&Gm.setupOpen); $("g-setupwarn").hidden=!(live&&Gm.setupOpen&&c.history().length>0)}
 function gMove(from,to,promo){const c=Gm.chess;if(!c||Gm.over||c.turn()!==Gm.color)return;
   if(Gm.clock&&clockLeft(Gm.color)<=0){clockTick();return}
   const m=c.move({from,to,promotion:promo||undefined}); if(!m)return; clockMoved(Gm.color);
@@ -2864,7 +2928,10 @@ async function gLoad(){ gRender(true); const remote=await acctGet("botgame"); co
       Gm.flag=s.flag||null; Gm.flagDraw=!!s.flagDraw;
       Gm.clock=s.clock?{tc:s.clock.tc,w:s.clock.w,b:s.clock.b,inc:s.clock.inc,running:null,since:0,hist:(s.clock.hist||[]).slice()}:null}
     Gm.counted=!!(Gm.chess&&gResult()); if(Gm.counted){await gamesReady; if(!Games.get(Gm.gameId)) gArchive()} gRender(true); gRecord(); gMaybeBot()}catch(e){gRender(true)}}
-$("g-new").onclick=()=>{Gm.resigned=false;Gm.view=null;gNew()};
+$("g-new").onclick=()=>{Gm.resigned=false;Gm.view=null;Gm.setupOpen=false;gNew()};
+$("g-showsetup").onclick=()=>{Gm.setupOpen=true;gPanels();$("g-setup").scrollIntoView({behavior:"smooth",block:"nearest"})};
+$("g-setupclose").onclick=()=>{Gm.setupOpen=false;gPanels()};
+$("g-again").onclick=()=>{const e=$("g-board").querySelector(".endcard"); if(e) e.remove(); $("g-setup").scrollIntoView({behavior:"smooth",block:"nearest"}); $("g-new").focus()};
 $("g-first").onclick=()=>gView(0); $("g-prev").onclick=()=>gView((Gm.view??Gm.chess.history().length)-1);
 $("g-next").onclick=()=>gView((Gm.view??Gm.chess.history().length)+1); $("g-last").onclick=()=>gView(Infinity); $("g-live").onclick=()=>gView(Infinity);
 $("g-moves").addEventListener("click",e=>{const b=e.target.closest(".gm"); if(b) gView(+b.dataset.ply)});
@@ -2939,7 +3006,7 @@ function aGames(scroll){ const el=$("a-games"); if(!el) return; const L=Games.al
     else gs.textContent="Ikke analysert";
     el.appendChild(row);
     if(sel&&scroll) row.scrollIntoView({block:"nearest"})}}
-$("a-games").addEventListener("click",e=>{const r=e.target.closest(".grow"); if(r){A.userPicked=true; if(r.dataset.id!==A.gameId) aShow(r.dataset.id)}});
+$("a-games").addEventListener("click",e=>{const r=e.target.closest(".grow"); if(r&&!e.target.closest(".btn")){A.userPicked=true; if(r.dataset.id!==A.gameId){aShow(r.dataset.id); $("a-pick").open=false; window.scrollTo({top:0,behavior:"smooth"})}}});
 $("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); if(!r) return;
   A.userPicked=true;
   if(e.key==="Enter"||e.key===" "){e.preventDefault(); if(r.dataset.id!==A.gameId) aShow(r.dataset.id)}
@@ -2949,11 +3016,20 @@ $("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); i
 /* =====================================================================
    ROUTER + KEYS
    ===================================================================== */
-const TABS=["analyse","notter","spill"];
-function route(){const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):"analyse";
+const TABS=["hjem","analyse","notter","spill"];
+function route(){const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):"hjem";
   TABS.forEach(x=>{$("tab-"+x).hidden=x!==t;document.querySelector(`.tabs [data-tab="${x}"]`).setAttribute("aria-current",x===t?"page":"false")});
   document.querySelectorAll("#footer [data-for]").forEach(p=>p.hidden=p.dataset.for!==t);
-  if(t==="notter") pInit(); if(t==="analyse") sizeBar()}
+  if(t==="notter") pInit(); if(t==="analyse") sizeBar(); if(t==="hjem") homeRender(); window.scrollTo(0,0)}
+/* Home: one card per module, each with a line about where you left off. */
+$("h-ic-pl").src=PIECES.wking; $("h-ic-pz").src=PIECES.wknight; $("h-ic-an").src=PIECES.wqueen;
+async function homeRender(){
+  const c=Gm.chess, r=Gm.record||{w:0,d:0,l:0};
+  $("h-st-pl").textContent=c&&!Gm.over&&c.history().length?`Parti i gang · ${Math.ceil(c.history().length/2)} trekk${Gm.clock?" · "+tcLabel(Gm.clock.tc):""}. Fortsett der du slapp.`
+    :(r.w+r.d+r.l)?`Dine resultater: ${r.w} seire, ${r.d} remis, ${r.l} tap`:"Velg styrke og tid, og sett i gang.";
+  const L=Games.all(), last=L[0]; if(last){const m=gameMeta(last); $("h-st-an").textContent=`Siste parti: ${m.title} · ${m.txt}`}
+  let pr=P.profile; if(!pr){ pr=store.get(STORE_P); if(!pr){ const remote=await acctGet("puzzleprofile"); if(remote) pr=remote } }
+  $("h-st-pz").textContent=pr?`Din nøtterating: ${pr.rating}${pr.games<10?" (foreløpig)":""} · ${pr.solved} løst`:"Velg startnivå og løs din første nøtt."}
 window.addEventListener("hashchange",route);
 document.addEventListener("keydown",e=>{if(/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName))return;
   if(!$("tab-analyse").hidden){
@@ -2966,8 +3042,8 @@ openingsReady.then(()=>{ if(A.G){A.G.op=openingInfo(A.G.fens);aHeader()} if(Gm.c
 Games.list=(store.get(STORE_GL)||[]);
 function aStart(){ if(!A.running&&!A.userPicked) aShow(Games.all()[0].id)} // always open on the most recent game
 aStart();
-const gamesReady=Games.load().then(()=>{ if(!A.running){ const before=A.gameId; aStart(); if(A.gameId===before) aGames() } });
-gLoad(); route(); sizeBar();
+const gamesReady=Games.load().then(()=>{ if(!A.running){ const before=A.gameId; aStart(); if(A.gameId===before) aGames() } if(!$("tab-hjem").hidden) homeRender() });
+gLoad().then(()=>{ if(!$("tab-hjem").hidden) homeRender() }); route(); sizeBar();
 </script>
 
 </body>
