@@ -249,11 +249,17 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .players{display:grid;gap:6px}
 .player{display:flex;align-items:center;gap:8px;font-weight:700}
-.movetext{font-family:var(--f-mono);font-size:13.5px;line-height:1.7;max-height:220px;overflow:auto;background:var(--bg);border-radius:8px;padding:8px 10px;margin:0;overflow-wrap:anywhere}
+.movetext{font-family:var(--f-mono);font-size:13.5px;line-height:1.7;max-height:220px;overflow:auto;background:var(--bg);border-radius:8px;padding:8px 10px;margin:0;overflow-wrap:anywhere;white-space:normal}
+.movetext .gm{font:inherit;border:0;background:none;color:var(--ink);padding:0 3px;border-radius:4px;cursor:pointer}
+.movetext .gm:hover{background:var(--line)}
+.movetext .gm.on{background:var(--accent);color:var(--on-accent)}
+.movetext .gm:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.viewbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 10px;border-radius:8px;background:var(--hl);color:var(--ink);font-size:14px;font-weight:600}
 .movetext span.n{color:var(--muted)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
 
-footer{font-size:12.5px;color:var(--muted);max-width:86ch}
+footer{font-size:12.5px;color:var(--muted);max-width:86ch;display:grid;gap:4px}
+footer p{margin:0}
 .kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px}
 @media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)} .list{max-height:340px}}
 @media (max-width:420px){.boardrow{grid-template-columns:20px minmax(0,1fr);gap:6px} .evalbar .lbl{font-size:8.5px} .controls button{min-width:0;flex:1} .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .promo button{width:52px;height:52px}}
@@ -409,6 +415,13 @@ footer{font-size:12.5px;color:var(--muted);max-width:86ch}
         <div class="clock" id="g-clock-top" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
         <div class="board" id="g-board" role="img" aria-label="Sjakkbrett for parti mot bot"></div>
         <div class="clock" id="g-clock-bot" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
+        <div class="viewbar" id="g-viewbar" hidden><span id="g-viewtxt"></span><button class="btn small primary" id="g-live" type="button">Tilbake til partiet</button></div>
+        <div class="controls">
+          <button id="g-first" aria-label="Til start">|&lt;</button>
+          <button id="g-prev" aria-label="Forrige trekk">&lt;</button>
+          <button id="g-next" aria-label="Neste trekk">&gt;</button>
+          <button id="g-last" aria-label="Til siste trekk">&gt;|</button>
+        </div>
         <div class="controls">
           <button id="g-undo" class="txt">Angre trekk</button>
           <button id="g-resign" class="txt">Gi opp</button>
@@ -458,7 +471,12 @@ footer{font-size:12.5px;color:var(--muted);max-width:86ch}
     </section>
   </section>
 
-  <footer id="footer">Bruk <span class="kbd">←</span> og <span class="kbd">→</span> for å bla i analysen. Trekkene merkes etter hvor mye vinnersjansen endrer seg, slik chess.com gjør. Motor: Stockfish 10 i nettleseren din (GPL). Åpninger: lichess-org/chess-openings. Nøtter: Lichess' åpne nøttedatabase (CC0), 24 595 nøtter fra 400 til 3166 i rating. Botens rating er omtrentlig. Brikker: cburnett.</footer>
+  <footer id="footer">
+    <p data-for="analyse">Bla med <span class="kbd">←</span> og <span class="kbd">→</span>, klikk på et trekk eller i grafen. Trekkene merkes etter hvor mye vinnersjansen endrer seg, slik chess.com gjør. Åpningsnavn fra lichess-org/chess-openings.</p>
+    <p data-for="notter">Nøttene kommer fra Lichess' åpne nøttedatabase (CC0): 24 595 nøtter fra 400 til 3166 i rating. Ratingen din er foreløpig, merket med «?», de første 10 nøttene.</p>
+    <p data-for="spill">Bla i partiet med <span class="kbd">←</span> og <span class="kbd">→</span> eller ved å klikke på et trekk. Det endrer ikke partiet, og klokken går videre. Botens styrke er omtrentlig.</p>
+    <p>Sjakkmotor: Stockfish 10 (GPL), som kjører i nettleseren din. Brikker: cburnett.</p>
+  </footer>
 </div>
 
 <script>
@@ -2771,12 +2789,26 @@ function gStatus(){const c=Gm.chess; if(!c){$("g-status").textContent="Ingen par
     else if(c.in_stalemate()) s="Patt – remis"; else if(c.in_threefold_repetition()) s="Tre gangers gjentakelse – remis"; else if(c.insufficient_material()) s="For lite materiale – remis"; else s="Remis";
     $("g-status").textContent=s; $("g-after").hidden=false; gCount(); gEndCard(s); return}
   $("g-status").textContent=Gm.thinking?"Boten tenker …":t===Gm.color?(c.in_check()?"Sjakk! Din tur":"Din tur"):"Botens tur"}
-function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=c?c.history({verbose:true}):[]; const last=hist[hist.length-1];
-  Gm.board.set({fen:c?c.fen():new Chess().fen(),flipped:Gm.flipped,animate:!noAnim,last:last?{from:last.from,to:last.to}:null,movable:c&&!Gm.over&&!Gm.thinking&&c.turn()===Gm.color?Gm.color:null});
-  const mt=$("g-moves"); mt.innerHTML=""; (c?c.history():[]).forEach((m,i)=>{if(i%2===0){const n=document.createElement("span");n.className="n";n.textContent=(i/2+1)+". ";mt.appendChild(n)}mt.appendChild(document.createTextNode(m+" "))});
-  mt.scrollTop=mt.scrollHeight;
+/* Reviewing: Gm.view is the ply being looked at, or null for the live position.
+   Looking back never changes the game, and the clocks keep running. */
+Gm.view=null;
+function gViewFen(ply){const t=new Chess(); const h=Gm.chess.history(); for(let i=0;i<ply;i++) t.move(h[i]); return {fen:t.fen(),last:ply?t.history({verbose:true})[ply-1]:null}}
+function gView(ply){ const c=Gm.chess; if(!c) return; const n=c.history().length; ply=Math.max(0,Math.min(n,ply));
+  const prev=Gm.view===null?n:Gm.view; Gm.view=ply>=n?null:ply; gRender(Math.abs(prev-ply)!==1)}
+function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=c?c.history({verbose:true}):[]; const n=hist.length;
+  if(Gm.view!==null&&(!c||Gm.view>=n)) Gm.view=null;
+  const live=Gm.view===null; const shown=live?{fen:c?c.fen():new Chess().fen(),last:hist[n-1]}:gViewFen(Gm.view);
+  Gm.board.set({fen:shown.fen,flipped:Gm.flipped,animate:!noAnim,last:shown.last?{from:shown.last.from,to:shown.last.to}:null,
+    movable:live&&c&&!Gm.over&&!Gm.thinking&&c.turn()===Gm.color?Gm.color:null});
+  const mt=$("g-moves"); mt.innerHTML=""; const at=live?n:Gm.view;
+  (c?c.history():[]).forEach((m,i)=>{if(i%2===0){const k=document.createElement("span");k.className="n";k.textContent=(i/2+1)+". ";mt.appendChild(k)}
+    const b=document.createElement("button");b.type="button";b.className="gm"+(i+1===at?" on":"");b.dataset.ply=i+1;b.textContent=m;mt.appendChild(b);mt.appendChild(document.createTextNode(" "))});
+  if(live) mt.scrollTop=mt.scrollHeight; else {const on=mt.querySelector(".gm.on"); if(on) on.scrollIntoView({block:"nearest"})}
+  $("g-viewbar").hidden=live; if(!live){const mv=Gm.view?`${Math.ceil(Gm.view/2)}${Gm.view%2?".":"..."} ${c.history()[Gm.view-1]}`:"startstillingen";
+    $("g-viewtxt").textContent=`Du ser på ${mv}. Partiet går videre${!Gm.over&&c.turn()===Gm.color?" – det er din tur":""}.`}
+  $("g-first").disabled=$("g-prev").disabled=!c||at===0; $("g-last").disabled=$("g-next").disabled=!c||live;
   $("g-title").textContent=c?`Du (${Gm.color==="w"?"hvit":"svart"}) mot Stockfish, ca. ${Gm.rating}`:"Stockfish";
-  $("g-sub").textContent=c?"Klikk eller dra en brikke for å flytte.":"Velg styrke og farge, og start et parti.";
+  $("g-sub").textContent=!c?"Velg styrke, farge og tid, og start et parti.":Gm.over?"Partiet er slutt.":"Klikk eller dra en brikke for å flytte.";
   if(c){const fens=[new Chess().fen()];const t=new Chess();c.history().forEach(m=>{t.move(m);fens.push(t.fen())});showOpening($("g-opening"),openingInfo(fens))} else $("g-opening").hidden=true;
   $("g-undo").disabled=!c||Gm.resigned||c.history().length<1; $("g-resign").disabled=!c||Gm.over; gStatus(); clockSync(); clockDraw(); tcRender()}
 function gMove(from,to,promo){const c=Gm.chess;if(!c||Gm.over||c.turn()!==Gm.color)return;
@@ -2832,11 +2864,15 @@ async function gLoad(){ gRender(true); const remote=await acctGet("botgame"); co
       Gm.flag=s.flag||null; Gm.flagDraw=!!s.flagDraw;
       Gm.clock=s.clock?{tc:s.clock.tc,w:s.clock.w,b:s.clock.b,inc:s.clock.inc,running:null,since:0,hist:(s.clock.hist||[]).slice()}:null}
     Gm.counted=!!(Gm.chess&&gResult()); if(Gm.counted){await gamesReady; if(!Games.get(Gm.gameId)) gArchive()} gRender(true); gRecord(); gMaybeBot()}catch(e){gRender(true)}}
-$("g-new").onclick=()=>{Gm.resigned=false;gNew()};
+$("g-new").onclick=()=>{Gm.resigned=false;Gm.view=null;gNew()};
+$("g-first").onclick=()=>gView(0); $("g-prev").onclick=()=>gView((Gm.view??Gm.chess.history().length)-1);
+$("g-next").onclick=()=>gView((Gm.view??Gm.chess.history().length)+1); $("g-last").onclick=()=>gView(Infinity); $("g-live").onclick=()=>gView(Infinity);
+$("g-moves").addEventListener("click",e=>{const b=e.target.closest(".gm"); if(b) gView(+b.dataset.ply)});
+$("g-board").addEventListener("pointerdown",e=>{ if(Gm.view!==null&&!e.target.closest(".endcard")){e.stopPropagation();gView(Infinity)} },true);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&Gm.chess&&!Gm.over&&Gm.clock) gSave()});
 tcRender(); clockLoop();
 $("g-flip").onclick=()=>{Gm.flipped=!Gm.flipped;gRender()};
-$("g-undo").onclick=()=>{const c=Gm.chess;if(!c||Gm.resigned)return; if(Gm.flag){Gm.over=true} if(Gm.over&&Gm.counted){Gm.counted=false;gUncount()} gClearEnd(); Gm.token++; Gm.engine.stop(); Gm.thinking=false;
+$("g-undo").onclick=()=>{const c=Gm.chess;if(!c||Gm.resigned)return; Gm.view=null; if(Gm.flag){Gm.over=true} if(Gm.over&&Gm.counted){Gm.counted=false;gUncount()} gClearEnd(); Gm.token++; Gm.engine.stop(); Gm.thinking=false;
   c.undo(); if(c.turn()!==Gm.color) c.undo();
   if(Gm.clock){const k=c.history().length, h=Gm.clock.hist[k]||Gm.clock.hist[0]; Gm.clock.running=null; Gm.clock.w=h.w; Gm.clock.b=h.b; Gm.clock.hist.length=k+1}
   Gm.flag=null; Gm.flagDraw=false; gSave(); gRender(); gMaybeBot()};
@@ -2916,10 +2952,14 @@ $("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); i
 const TABS=["analyse","notter","spill"];
 function route(){const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):"analyse";
   TABS.forEach(x=>{$("tab-"+x).hidden=x!==t;document.querySelector(`.tabs [data-tab="${x}"]`).setAttribute("aria-current",x===t?"page":"false")});
+  document.querySelectorAll("#footer [data-for]").forEach(p=>p.hidden=p.dataset.for!==t);
   if(t==="notter") pInit(); if(t==="analyse") sizeBar()}
 window.addEventListener("hashchange",route);
-document.addEventListener("keydown",e=>{if(/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName))return; if($("tab-analyse").hidden) return;
-  if(e.key==="ArrowRight"){aGo(A.cur+1);e.preventDefault()}else if(e.key==="ArrowLeft"){aGo(A.cur-1);e.preventDefault()}else if(e.key==="Home")aGo(0);else if(e.key==="End")aGo(A.G.moves.length)});
+document.addEventListener("keydown",e=>{if(/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName))return;
+  if(!$("tab-analyse").hidden){
+    if(e.key==="ArrowRight"){aGo(A.cur+1);e.preventDefault()}else if(e.key==="ArrowLeft"){aGo(A.cur-1);e.preventDefault()}else if(e.key==="Home")aGo(0);else if(e.key==="End")aGo(A.G.moves.length)}
+  else if(!$("tab-spill").hidden&&Gm.chess){ const n=Gm.chess.history().length, at=Gm.view??n;
+    if(e.key==="ArrowRight"){gView(at+1);e.preventDefault()}else if(e.key==="ArrowLeft"){gView(at-1);e.preventDefault()}else if(e.key==="Home"){gView(0);e.preventDefault()}else if(e.key==="End"){gView(Infinity);e.preventDefault()}}});
 
 openingsReady.then(()=>{ if(A.G){A.G.op=openingInfo(A.G.fens);aHeader()} if(Gm.chess) gRender(true); aGames()});
 // show the browser's copy at once, then refresh from the account
