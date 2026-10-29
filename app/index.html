@@ -228,7 +228,7 @@ body[data-tab="analyse"]{--accent:var(--m-an)} body[data-tab="notter"]{--accent:
 .ahead-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .games{gap:8px}
 .games-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.glist{display:grid;max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.glist{position:relative;display:grid;max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
 .grow{display:grid;grid-template-columns:76px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--surface)}
 .grow:last-child{border-bottom:0}
 .grow:hover{background:var(--bg)}
@@ -303,18 +303,27 @@ body[data-tab="analyse"]{--accent:var(--m-an)} body[data-tab="notter"]{--accent:
 .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .players{display:grid;gap:6px}
 .player{display:flex;align-items:center;gap:8px;font-weight:700}
-.movetext{font-family:var(--f-mono);font-size:13.5px;line-height:1.7;max-height:220px;overflow:auto;background:var(--bg);border-radius:8px;padding:8px 10px;margin:0;overflow-wrap:anywhere;white-space:normal}
+.movetext{position:relative;font-family:var(--f-mono);font-size:13.5px;line-height:1.7;max-height:220px;overflow:auto;background:var(--bg);border-radius:8px;padding:8px 10px;margin:0;overflow-wrap:anywhere;white-space:normal}
 .movetext .gm{font:inherit;border:0;background:none;color:var(--ink);padding:0 3px;border-radius:4px;cursor:pointer}
 .movetext .gm:hover{background:var(--line)}
 .movetext .gm.on{background:var(--accent);color:var(--on-accent)}
 .movetext .gm:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.viewbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 10px;border-radius:8px;background:var(--hl);color:var(--ink);font-size:14px;font-weight:600}
+.viewbar{display:flex;justify-content:space-between;align-items:center;gap:10px;height:44px;padding:0 6px 0 10px;border-radius:8px;background:var(--hl);color:var(--ink);font-size:14px;font-weight:600}
+.viewbar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewbar .btn{flex:none}
+.viewbar.idle{visibility:hidden}
 .movetext span.n{color:var(--muted)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
 
 footer{font-size:12.5px;color:var(--muted);max-width:86ch;display:grid;gap:4px}
 footer p{margin:0}
 .kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px}
+@media (min-width:701px){
+  #g-board{width:min(100%,max(320px,calc(100vh - 500px)));margin-inline:auto}
+  #g-clock-top,#g-clock-bot,#g-viewbar,#tab-spill .controls{width:min(100%,max(320px,calc(100vh - 500px)));margin-inline:auto}
+  #p-board{width:min(100%,max(320px,calc(100vh - 290px)));margin-inline:auto}
+  #tab-analyse .boardrow{width:min(100%,max(340px,calc(100vh - 300px)));margin-inline:auto}
+}
 @media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)} .list{max-height:340px}}
 /* Phones: everything needed to play fits on one screen. The board is sized from the screen
    height, the panels are reordered so the active controls sit right under the board, and
@@ -347,10 +356,11 @@ footer p{margin:0}
   .mod .mst{grid-column:2/3;font-size:13px;padding:0;background:none;color:var(--muted);min-height:0}
   .mod .mgo{grid-column:3;grid-row:1/3;font-size:0} .mod .mgo::after{content:"›";font-size:28px;line-height:1}
   /* play */
-  #tab-spill > header{order:1} #g-clock-top{order:2} #g-board{order:3} #g-clock-bot{order:4} #g-viewbar{order:5}
-  #tab-spill .controls{order:6} #g-game{order:7} #g-setup{order:8}
+  #tab-spill > header{order:1} #g-clock-top{order:2} #g-board{order:3} #g-clock-bot{order:4}
+  #tab-spill .controls{order:5} #g-viewbar{order:6;height:38px} #g-game{order:7} #g-setup{order:8}
   .clock{padding:3px 10px} .clock .ctime{font-size:20px;padding:1px 8px}
-  #g-board{width:min(100%,calc(100dvh - 330px));min-width:240px}
+  #g-board{width:min(100%,calc(100dvh - 392px));min-width:200px}
+  #g-clock-top,#g-clock-bot,#tab-spill .controls,#g-viewbar{width:min(100%,max(200px,calc(100dvh - 392px)));align-self:center}
   #g-game{gap:6px} #g-game .movetext{max-height:3.5em;font-size:13px;padding:4px 8px}
   #tab-spill.setupmode #g-clock-top,#tab-spill.setupmode #g-board,#tab-spill.setupmode #g-clock-bot,#tab-spill.setupmode #g-viewbar,#tab-spill.setupmode .controls{display:none}
   #tab-spill.setupmode #g-setup{order:2}
@@ -370,7 +380,7 @@ footer p{margin:0}
   #a-card{gap:4px} #a-card .mvname{font-size:18px} #a-card .note{font-size:14px}
   .summary{grid-template-columns:1fr 1fr}
 }
-@supports not (height:1dvh){@media (max-width:700px){#g-board{width:min(100%,calc(100vh - 330px))} #p-board{width:min(100%,calc(100vh - 300px))} #tab-analyse .boardrow{width:min(100%,calc(100vh - 274px))}}}
+@supports not (height:1dvh){@media (max-width:700px){#g-board{width:min(100%,calc(100vh - 392px))} #p-board{width:min(100%,calc(100vh - 300px))} #tab-analyse .boardrow{width:min(100%,calc(100vh - 274px))}}}
 @media (max-width:420px){.boardrow{grid-template-columns:20px minmax(0,1fr);gap:6px} .evalbar .lbl{font-size:8.5px} .controls button{min-width:0;flex:1} .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .promo button{width:52px;height:52px}}
 @media (prefers-reduced-motion:reduce){.evalbar .w,.progress .fill{transition:none}}
 </style>
@@ -538,7 +548,6 @@ footer p{margin:0}
         <div class="clock" id="g-clock-top" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
         <div class="board" id="g-board" role="img" aria-label="Sjakkbrett for parti mot bot"></div>
         <div class="clock" id="g-clock-bot" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
-        <div class="viewbar" id="g-viewbar" hidden><span id="g-viewtxt"></span><button class="btn small primary" id="g-live" type="button">Tilbake til partiet</button></div>
         <div class="controls">
           <button id="g-first" aria-label="Til start">|&lt;</button>
           <button id="g-prev" aria-label="Forrige trekk">&lt;</button>
@@ -546,6 +555,7 @@ footer p{margin:0}
           <button id="g-last" aria-label="Til siste trekk">&gt;|</button>
           <button id="g-flip" class="txt" aria-label="Snu brettet">Snu</button>
         </div>
+        <div class="viewbar idle" id="g-viewbar" aria-live="polite"><span id="g-viewtxt"></span><button class="btn small primary" id="g-live" type="button" tabindex="-1">Tilbake til partiet</button></div>
       </div>
       <div class="panel">
         <div class="card" id="g-setup">
@@ -1136,9 +1146,9 @@ function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=
   const mt=$("g-moves"); mt.innerHTML=""; mt.hidden=!n; const at=live?n:Gm.view;
   (c?c.history():[]).forEach((m,i)=>{if(i%2===0){const k=document.createElement("span");k.className="n";k.textContent=(i/2+1)+". ";mt.appendChild(k)}
     const b=document.createElement("button");b.type="button";b.className="gm"+(i+1===at?" on":"");b.dataset.ply=i+1;b.textContent=m;mt.appendChild(b);mt.appendChild(document.createTextNode(" "))});
-  if(live) mt.scrollTop=mt.scrollHeight; else {const on=mt.querySelector(".gm.on"); if(on) on.scrollIntoView({block:"nearest"})}
-  $("g-viewbar").hidden=live; if(!live){const mv=Gm.view?`${Math.ceil(Gm.view/2)}${Gm.view%2?".":"..."} ${c.history()[Gm.view-1]}`:"startstillingen";
-    $("g-viewtxt").textContent=`Du ser på ${mv}. Partiet går videre${!Gm.over&&c.turn()===Gm.color?" – det er din tur":""}.`}
+  if(live) mt.scrollTop=mt.scrollHeight; else {const on=mt.querySelector(".gm.on"); if(on){const top=on.offsetTop-mt.offsetTop; if(top<mt.scrollTop||top+on.offsetHeight>mt.scrollTop+mt.clientHeight) mt.scrollTop=top-mt.clientHeight/2}}
+  $("g-viewbar").classList.toggle("idle",live); $("g-live").tabIndex=live?-1:0; if(!live){const mv=Gm.view?`${Math.ceil(Gm.view/2)}${Gm.view%2?".":"..."} ${c.history()[Gm.view-1]}`:"startstillingen";
+    $("g-viewtxt").textContent=`Viser ${mv}${!Gm.over&&c.turn()===Gm.color?" · din tur":""}`}
   $("g-first").disabled=$("g-prev").disabled=!c||at===0; $("g-last").disabled=$("g-next").disabled=!c||live;
   $("g-title").textContent=c?`Du (${Gm.color==="w"?"hvit":"svart"}) mot Stockfish, ca. ${Gm.rating}`:"Stockfish";
   $("g-sub").textContent=!c?"Velg styrke, farge og tid, og start et parti.":Gm.over?"Partiet er slutt.":(Gm.clock?tcLong(Gm.clock.tc)+" · ":"")+"Klikk eller dra en brikke for å flytte.";
@@ -1280,7 +1290,7 @@ function aGames(scroll){ const el=$("a-games"); if(!el) return; const L=Games.al
     else if(an){gs.innerHTML=myAcc!=null?`Nøyaktighet <span class="acc1">${myAcc.toFixed(1)}</span>`:"Analysert"}
     else gs.textContent="Ikke analysert";
     el.appendChild(row);
-    if(sel&&scroll) row.scrollIntoView({block:"nearest"})}}
+    if(sel&&scroll){const L=$("a-games"), top=row.offsetTop-L.offsetTop; if(top<L.scrollTop||top+row.offsetHeight>L.scrollTop+L.clientHeight) L.scrollTop=top}}}
 $("a-games").addEventListener("click",e=>{const r=e.target.closest(".grow"); if(r&&!e.target.closest(".btn")){A.userPicked=true; if(r.dataset.id!==A.gameId){aShow(r.dataset.id); $("a-pick").open=false; window.scrollTo({top:0,behavior:"smooth"})}}});
 $("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); if(!r) return;
   A.userPicked=true;
