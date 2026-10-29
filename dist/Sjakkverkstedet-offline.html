@@ -35,6 +35,9 @@
   --m-an:#7fb0de; --m-pz:#6cc4ad; --m-pl:#e3a06c; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+/* Phones: no double-tap zoom anywhere (pinch zoom still works); quick taps in a row stay taps. */
+html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,a,summary,label,input,select,.grow,.tcchip,.mod,.gm,.mv{touch-action:manipulation}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
 .wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
