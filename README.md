@@ -8,8 +8,9 @@ A chess app that runs entirely in the browser, with no server of its own:
   database of 3,864 openings.
 - **Sjakknøtter** – 24,595 rated puzzles (400–3166). Your puzzle rating adapts as you solve
   them: you gain about twice as much for a solve as you lose for a miss.
-- **Spill mot bot** – play Stockfish at roughly 600–2800. Finished games are saved to
-  *Mine partier* and can be analysed.
+- **Spill mot bot** – play Stockfish at roughly 600–2800, with or without a clock. Pick a
+  time control such as 1+1 or 5+10 (minutes + seconds added per move), or enter and save your
+  own. Finished games are saved to *Mine partier* and can be analysed.
 
 The interface is in Norwegian.
 

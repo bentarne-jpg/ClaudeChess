@@ -191,6 +191,30 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .gs .acc1{font-family:var(--f-mono);font-weight:700;color:var(--ink)}
 .gempty{padding:14px;color:var(--muted);font-size:14px}
 @media (max-width:560px){.grow{grid-template-columns:minmax(0,1fr) auto;row-gap:4px}.grow .gd{grid-column:1/-1}.gs{grid-column:1/-1}}
+/* clocks + time controls */
+.clock{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+.clock .cname{font-weight:700;font-size:14px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.clock .ctime{font-size:26px;font-weight:700;letter-spacing:.02em;padding:2px 10px;border-radius:6px;background:var(--bg);color:var(--ink);min-width:5.5ch;text-align:right}
+.clock.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.clock.on .ctime{background:var(--accent);color:var(--on-accent)}
+.clock.low .ctime{background:var(--c-blunder);color:#fff}
+.clock.out .ctime{background:var(--c-blunder);color:#fff;text-decoration:line-through}
+.tc{display:grid;gap:8px}
+.tc .val{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.tc .val b{font-size:18px}
+.tcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.tcchip{position:relative;font:inherit;font-family:var(--f-mono);font-weight:700;font-size:14px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;padding:0 6px}
+.tcchip:hover{border-color:var(--accent)}
+.tcchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tcchip.none{font-family:var(--f-body);font-size:13px;grid-column:span 2}
+.tcchip.mine{border-style:dashed}
+.tcchip .x{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:12px;line-height:15px;display:none;cursor:pointer}
+.tcchip.mine:hover .x,.tcchip.mine:focus-within .x{display:block}
+.tccustom summary{cursor:pointer;font-weight:700;font-size:14px}
+.tccustom .row{margin-top:8px}
+.tccustom input{font:inherit;width:84px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--field);color:var(--ink);padding:0 8px}
+@media (prefers-reduced-motion:no-preference){.clock.low.on .ctime{animation:blink 1s steps(2) infinite}}
+@keyframes blink{50%{opacity:.6}}
 /* puzzles */
 .rating{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .rating .big{font-family:var(--f-mono);font-weight:700;font-size:44px;line-height:1}
@@ -382,7 +406,9 @@ footer{font-size:12.5px;color:var(--muted);max-width:86ch}
     </header>
     <section class="main">
       <div class="boardcol">
+        <div class="clock" id="g-clock-top" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
         <div class="board" id="g-board" role="img" aria-label="Sjakkbrett for parti mot bot"></div>
+        <div class="clock" id="g-clock-bot" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
         <div class="controls">
           <button id="g-undo" class="txt">Angre trekk</button>
           <button id="g-resign" class="txt">Gi opp</button>
@@ -404,6 +430,19 @@ footer{font-size:12.5px;color:var(--muted);max-width:86ch}
               <button type="button" data-color="b" aria-pressed="false">Svart</button>
               <button type="button" data-color="r" aria-pressed="false">Tilfeldig</button>
             </div>
+          </div>
+          <div class="tc">
+            <div class="val"><span class="hint">Tid</span><b class="mono" id="g-tcval">Ingen klokke</b></div>
+            <div class="tcgrid" id="g-tcs" role="group" aria-label="Tidskontroll"></div>
+            <details class="tccustom" id="g-tccustom">
+              <summary>Egen tid</summary>
+              <div class="row">
+                <label class="sel" for="g-tcmin">Minutter <input type="text" id="g-tcmin" value="5" inputmode="decimal" autocomplete="off" spellcheck="false"></label>
+                <label class="sel" for="g-tcinc">+ sekunder per trekk <input type="text" id="g-tcinc" value="10" inputmode="numeric" autocomplete="off" spellcheck="false"></label>
+              </div>
+              <div class="row"><button class="btn small primary" id="g-tcuse" type="button">Bruk</button><button class="btn small" id="g-tcsave" type="button">Bruk og lagre som valg</button></div>
+              <p class="msg" id="g-tcmsg" role="status"></p>
+            </details>
           </div>
           <div class="row"><button class="btn primary" id="g-new" type="button">Start nytt parti</button></div>
           <p class="hint" id="g-record"></p>
@@ -542,14 +581,14 @@ function Engine(){
   let w=null, chain=Promise.resolve();
   async function boot(){ if(w) return w; if(OFF){w=await tryWorker(OFF.engineUrl());return w} try{w=await tryWorker("stockfish.js")}catch(e){w=await tryWorker("stockfish.asm.js")} return w}
   function run(fn){const p=chain.then(async()=>{const wk=await boot();return fn(wk)}); chain=p.catch(()=>{}); return p}
-  function search(fen,{depth=12,multipv=1,skill=20}={}){return run(wk=>new Promise(res=>{const lines={};
+  function search(fen,{depth=12,multipv=1,skill=20,movetime=0}={}){return run(wk=>new Promise(res=>{const lines={};
     wk.onmessage=e=>{const l=String(e.data);
       if(l.startsWith("info")&&l.includes(" pv ")){const sc=l.match(/ score (cp|mate) (-?\d+)/); if(!sc) return;
         const d=+(l.match(/ depth (\d+)/)||[0,0])[1], mp=+(l.match(/ multipv (\d+)/)||[0,1])[1];
         if(!lines[mp]||d>=lines[mp].depth) lines[mp]={depth:d,type:sc[1],val:+sc[2],pv:l.split(" pv ")[1].trim().split(" ")}}
       else if(l.startsWith("bestmove")) res({best:l.split(" ")[1],lines:Object.keys(lines).sort((a,b)=>a-b).map(k=>lines[k])})};
     wk.postMessage("setoption name MultiPV value "+multipv); wk.postMessage("setoption name Skill Level value "+skill);
-    wk.postMessage("position fen "+fen); wk.postMessage("go depth "+depth)}))}
+    wk.postMessage("position fen "+fen); wk.postMessage("go depth "+depth+(movetime?" movetime "+Math.max(50,Math.round(movetime)):""))}))}
   function stop(){if(w){w.terminate();w=null} chain=Promise.resolve()}
   return {search,stop,newGame:()=>run(wk=>wk.postMessage("ucinewgame"))};
 }
@@ -854,18 +893,87 @@ function ratingDesc(r){return r<900?"Nybegynner: gjør mange feil og overser enk
 function gSlider(){const r=+$("g-rating").value;$("g-ratingval").textContent="ca. "+r;$("g-ratingdesc").textContent=ratingDesc(r)}
 $("g-rating").addEventListener("input",gSlider); $("g-rating").addEventListener("change",()=>gSave()); gSlider();
 document.querySelectorAll(".seg [data-color]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".seg [data-color]").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));Gm.choice=b.dataset.color;gSave()});
+/* ---- time controls ---- */
+const TC_PRESETS=[[1,0],[1,1],[2,1],[3,0],[3,2],[5,0],[5,3],[5,10],[10,0],[10,5],[15,10],[30,0]];
+const tcKey=t=>t?`${t.m}+${t.i}`:"none";
+const tcLabel=t=>t?`${fmtMin(t.m)}+${t.i}`:"Ingen klokke";
+const tcLong=t=>t?`${t.m>=1?fmtMin(t.m)+" min":Math.round(t.m*60)+" s"}${t.i?` + ${t.i} s per trekk`:""}`:"Ingen klokke";
+function fmtMin(m){return m>=1||m===0?String(+m.toFixed(2)).replace(".",","):`${Math.round(m*60)} s`.replace(" s","s")}
+Gm.tc=null; Gm.myTcs=[]; Gm.clock=null;
+function tcRender(){ const g=$("g-tcs"); g.innerHTML=""; const sel=tcKey(Gm.tc);
+  const mk=(t,cls)=>{const b=document.createElement("button");b.type="button";b.className="tcchip"+(cls?" "+cls:"");b.textContent=tcLabel(t);b.title=tcLong(t);
+    b.setAttribute("aria-pressed",tcKey(t)===sel?"true":"false"); b.onclick=e=>{if(e.target.classList.contains("x"))return; Gm.tc=t; tcRender(); gSave()}; return b};
+  g.appendChild(mk(null,"none"));
+  TC_PRESETS.forEach(([m,i])=>g.appendChild(mk({m,i})));
+  Gm.myTcs.forEach((t,ix)=>{ if(TC_PRESETS.some(([m,i])=>m===t.m&&i===t.i)) return; const b=mk(t,"mine");
+    const x=document.createElement("span");x.className="x";x.textContent="×";x.setAttribute("role","button");x.setAttribute("aria-label",`Fjern ${tcLabel(t)}`);
+    x.onclick=e=>{e.stopPropagation();Gm.myTcs.splice(ix,1);if(tcKey(Gm.tc)===tcKey(t))Gm.tc=null;tcRender();gSave()}; b.appendChild(x); g.appendChild(b)});
+  $("g-tcval").textContent=tcLong(Gm.tc)+(Gm.chess&&!Gm.over&&tcKey(Gm.tc)!==tcKey(Gm.clock&&Gm.clock.tc)?" (fra neste parti)":"")}
+function tcFromInputs(){ const rm=String($("g-tcmin").value).trim().replace(",","."), ri=String($("g-tcinc").value).trim();
+  const m=/^\d+(\.\d+)?$/.test(rm)?parseFloat(rm):NaN, i=/^\d+$/.test(ri)?parseInt(ri,10):NaN;
+  const msg=$("g-tcmsg"); msg.className="msg"; msg.textContent="";
+  if(!(m>=0.25&&m<=180)){msg.className="msg err";msg.textContent="Skriv inn mellom 0,25 og 180 minutter.";return null}
+  if(!(i>=0&&i<=180)){msg.className="msg err";msg.textContent="Skriv inn mellom 0 og 180 sekunder per trekk.";return null}
+  return {m:Math.round(m*100)/100,i}}
+$("g-tcuse").onclick=()=>{const t=tcFromInputs(); if(!t)return; Gm.tc=t; tcRender(); gSave(); $("g-tcmsg").className="msg ok"; $("g-tcmsg").textContent=`Valgt: ${tcLong(t)}.`};
+$("g-tcsave").onclick=()=>{const t=tcFromInputs(); if(!t)return; Gm.tc=t;
+  if(!Gm.myTcs.some(x=>x.m===t.m&&x.i===t.i)&&!TC_PRESETS.some(([m,i])=>m===t.m&&i===t.i)) Gm.myTcs.push(t);
+  tcRender(); gSave(); $("g-tcmsg").className="msg ok"; $("g-tcmsg").textContent=`Lagret ${tcLabel(t)} blant valgene dine.`};
+
+/* ---- the clock ----
+   Times are kept in ms. The clock starts once both sides have made their first move;
+   the mover gets the increment after each timed move. */
+const now=()=>performance.now();
+function clockNew(tc){ return tc?{tc,w:tc.m*60000,b:tc.m*60000,inc:tc.i*1000,running:null,since:0,hist:[{w:tc.m*60000,b:tc.m*60000}]}:null}
+function clockLeft(side){const c=Gm.clock; if(!c) return Infinity; let t=c[side]; if(c.running===side) t-=now()-c.since; return t}
+function clockSync(){ // the clock follows the position: whoever is to move runs, from ply 2 on
+  const c=Gm.clock; if(!c||!Gm.chess) return; const ply=Gm.chess.history().length;
+  const want=Gm.over?null:(ply>=2?Gm.chess.turn():null);
+  if(c.running&&c.running!==want){c[c.running]-=now()-c.since; c.running=null}
+  if(want&&!c.running){c.running=want;c.since=now()}}
+function clockMoved(mover){ // call right after `mover` completed a move
+  const c=Gm.clock; if(!c) return; const ply=Gm.chess.history().length;
+  if(c.running===mover){c[mover]-=now()-c.since; c.running=null}
+  if(ply>2||(ply===2)) c[mover]+= (ply>=3?c.inc:0);
+  c.hist[ply]={w:c.w,b:c.b}; c.hist.length=ply+1; clockSync()}
+function clockFmt(ms){ if(ms===Infinity) return "–"; ms=Math.max(0,ms);
+  if(ms<10000) return (Math.floor(ms/100)/10).toFixed(1).replace(".",",");
+  const s=Math.ceil(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60), ss=String(s%60).padStart(2,"0");
+  return h?`${h}:${String(m).padStart(2,"0")}:${ss}`:`${m}:${ss}`}
+function clockDraw(){ const c=Gm.clock, show=!!(c&&Gm.chess); $("g-clock-top").hidden=$("g-clock-bot").hidden=!show; if(!show) return;
+  const me=Gm.color, bot=me==="w"?"b":"w"; const top=Gm.flipped===(me==="b")?bot:me; // the side shown at the top of the board
+  const bottom=top===me?bot:me;
+  [[$("g-clock-top"),top],[$("g-clock-bot"),bottom]].forEach(([el,side])=>{ const left=clockLeft(side);
+    el.querySelector(".cname").textContent=side===me?`Du (${me==="w"?"hvit":"svart"})`:`Stockfish, ca. ${Gm.rating}`;
+    el.querySelector(".ctime").textContent=clockFmt(left);
+    el.classList.toggle("on",c.running===side); el.classList.toggle("out",Gm.flag===side);
+    el.classList.toggle("low",Gm.flag!==side&&left<Math.min(20000,c.tc.m*60000*0.1+1000))})}
+let clockTimer=null;
+function clockTick(){ const c=Gm.clock; if(c&&c.running&&!Gm.over){ const side=c.running; if(clockLeft(side)<=0){ c[side]=0; c.running=null; gFlag(side); return } }
+  clockDraw()}
+function clockLoop(){ if(clockTimer) return; clockTimer=setInterval(clockTick,100)}
+function gFlag(side){ // `side` ran out of time
+  Gm.token++; Gm.engine.stop(); Gm.thinking=false; Gm.flag=side;
+  const other=side==="w"?"b":"w"; const pcs=Gm.chess.board().flat().filter(x=>x&&x.color===other&&x.type!=="k");
+  Gm.flagDraw=pcs.length===0||(pcs.length===1&&["n","b"].includes(pcs[0].type)); // the other side cannot mate: draw
+  gSave(); gRender()}
 function gClearEnd(){const e=$("g-board").querySelector(".endcard"); if(e) e.remove(); Gm.board.set({marks:{}})}
 function gNew(){gClearEnd(); Gm.token++; Gm.engine.stop(); Gm.rating=+$("g-rating").value;
-  Gm.counted=false; Gm.endedAt=null; Gm.gameId="b_"+Date.now(); Gm.color=Gm.choice==="r"?(Math.random()<.5?"w":"b"):Gm.choice; Gm.chess=new Chess(); Gm.over=false; Gm.flipped=Gm.color==="b";
+  Gm.counted=false; Gm.endedAt=null; Gm.flag=null; Gm.flagDraw=false; Gm.clock=clockNew(Gm.tc); Gm.gameId="b_"+Date.now(); Gm.color=Gm.choice==="r"?(Math.random()<.5?"w":"b"):Gm.choice; Gm.chess=new Chess(); Gm.over=false; Gm.flipped=Gm.color==="b";
   $("g-after").hidden=true;$("g-confirm").hidden=true;$("g-msg").textContent="";$("g-msg").className="msg"; gSave(); gRender(true); gMaybeBot()}
 function gPgn(){const h=[`[Event "Parti mot Stockfish"]`,`[Date "${new Date(Gm.endedAt||Date.now()).toISOString().slice(0,10).replace(/-/g,".")}"]`,
   `[White "${Gm.color==="w"?"Du":"Stockfish (ca. "+Gm.rating+")"}"]`,`[Black "${Gm.color==="b"?"Du":"Stockfish (ca. "+Gm.rating+")"}"]`,`[Result "${gResult()||"*"}"]`];
+  if(Gm.clock) h.push(`[TimeControl "${Math.round(Gm.clock.tc.m*60)}+${Gm.clock.tc.i}"]`);
+  if(Gm.flag) h.push(`[Termination "Time forfeit"]`);
   const c=new Chess(); const hist=Gm.chess.history(); let s=""; hist.forEach((m,i)=>{if(i%2===0)s+=(i/2+1)+". ";s+=m+" "}); return h.join("\n")+"\n\n"+s+(gResult()||"*")}
-function gResult(){const c=Gm.chess;if(!c)return null;if(Gm.resigned)return Gm.color==="w"?"0-1":"1-0";if(c.in_checkmate())return c.turn()==="w"?"0-1":"1-0";if(c.in_draw()||c.in_stalemate()||c.in_threefold_repetition())return"1/2-1/2";return null}
+function gResult(){const c=Gm.chess;if(!c)return null;if(Gm.resigned)return Gm.color==="w"?"0-1":"1-0";
+  if(Gm.flag) return Gm.flagDraw?"1/2-1/2":Gm.flag==="w"?"0-1":"1-0";if(c.in_checkmate())return c.turn()==="w"?"0-1":"1-0";if(c.in_draw()||c.in_stalemate()||c.in_threefold_repetition())return"1/2-1/2";return null}
 function gStatus(){const c=Gm.chess; if(!c){$("g-status").textContent="Ingen parti i gang";$("g-turn").className="turnchip";return}
   const t=c.turn(); $("g-turn").className="turnchip "+t; const res=gResult();
   if(res){Gm.over=true; let s;
-    if(Gm.resigned) s="Du ga opp"; else if(c.in_checkmate()) s=(t===Gm.color)?"Sjakkmatt – boten vant":"Sjakkmatt – du vant!";
+    if(Gm.resigned) s="Du ga opp";
+    else if(Gm.flag) s=Gm.flagDraw?"Tiden gikk ut – remis":Gm.flag===Gm.color?"Tiden din gikk ut – boten vant":"Botens tid gikk ut – du vant!";
+    else if(c.in_checkmate()) s=(t===Gm.color)?"Sjakkmatt – boten vant":"Sjakkmatt – du vant!";
     else if(c.in_stalemate()) s="Patt – remis"; else if(c.in_threefold_repetition()) s="Tre gangers gjentakelse – remis"; else if(c.insufficient_material()) s="For lite materiale – remis"; else s="Remis";
     $("g-status").textContent=s; $("g-after").hidden=false; gCount(); gEndCard(s); return}
   $("g-status").textContent=Gm.thinking?"Boten tenker …":t===Gm.color?(c.in_check()?"Sjakk! Din tur":"Din tur"):"Botens tur"}
@@ -876,18 +984,24 @@ function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=
   $("g-title").textContent=c?`Du (${Gm.color==="w"?"hvit":"svart"}) mot Stockfish, ca. ${Gm.rating}`:"Stockfish";
   $("g-sub").textContent=c?"Klikk eller dra en brikke for å flytte.":"Velg styrke og farge, og start et parti.";
   if(c){const fens=[new Chess().fen()];const t=new Chess();c.history().forEach(m=>{t.move(m);fens.push(t.fen())});showOpening($("g-opening"),openingInfo(fens))} else $("g-opening").hidden=true;
-  $("g-undo").disabled=!c||Gm.resigned||c.history().length<1; $("g-resign").disabled=!c||Gm.over; gStatus()}
-function gMove(from,to,promo){const c=Gm.chess;if(!c||Gm.over||c.turn()!==Gm.color)return; const m=c.move({from,to,promotion:promo||undefined}); if(!m)return;
+  $("g-undo").disabled=!c||Gm.resigned||c.history().length<1; $("g-resign").disabled=!c||Gm.over; gStatus(); clockSync(); clockDraw(); tcRender()}
+function gMove(from,to,promo){const c=Gm.chess;if(!c||Gm.over||c.turn()!==Gm.color)return;
+  if(Gm.clock&&clockLeft(Gm.color)<=0){clockTick();return}
+  const m=c.move({from,to,promotion:promo||undefined}); if(!m)return; clockMoved(Gm.color);
   gSave(); gRender(); gMaybeBot()}
 async function gMaybeBot(){const c=Gm.chess; if(!c||Gm.over||gResult()||c.turn()===Gm.color) return;
   const tok=Gm.token; Gm.thinking=true; gRender(); const L=levelFor(Gm.rating), t0=Date.now(); let uci=null;
+  const bot=c.turn(); let budget=0; if(Gm.clock){const left=clockLeft(bot), inc=Gm.clock.inc; // spend a slice of the remaining time
+    budget=Math.max(80,Math.min(left/25+inc*0.8,left/3)); if(c.history().length<2) budget=Math.min(budget,1500)}
   try{ if(Math.random()<L.rand){const ms=c.moves({verbose:true});const m=ms[Math.floor(Math.random()*ms.length)];uci=m.from+m.to+(m.promotion||"")}
-    else{const r=await Gm.engine.search(c.fen(),{depth:L.depth,skill:L.skill,multipv:1});uci=r.best}}
+    else{const r=await Gm.engine.search(c.fen(),{depth:L.depth,skill:L.skill,multipv:1,movetime:budget});uci=r.best}}
   catch(e){Gm.thinking=false;$("g-msg").className="msg err";$("g-msg").textContent="Sjakkmotoren kunne ikke starte i denne nettleseren.";gRender();return}
-  if(tok!==Gm.token) return; const wait=700-(Date.now()-t0); if(wait>0) await sleep(wait); if(tok!==Gm.token) return;
-  Gm.thinking=false; if(uci&&uci!=="(none)") c.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||undefined}); gSave(); gRender()}
+  if(tok!==Gm.token) return; const wait=(Gm.clock?Math.min(700,budget*0.5):700)-(Date.now()-t0); if(wait>0) await sleep(wait); if(tok!==Gm.token) return;
+  if(Gm.clock&&clockLeft(bot)<=0){clockTick();return}
+  Gm.thinking=false; if(uci&&uci!=="(none)"){c.move({from:uci.slice(0,2),to:uci.slice(2,4),promotion:uci[4]||undefined}); clockMoved(bot)} gSave(); gRender()}
 function gEndReason(){const c=Gm.chess,t=c.turn(),side=t==="w"?"Hvit":"Svart";
   if(Gm.resigned) return "Partiet er registrert som tap.";
+  if(Gm.flag) return (Gm.flag===Gm.color?"Klokken din nådde null.":"Botens klokke nådde null.")+(Gm.flagDraw?" Motstanderen har ikke nok brikker til å sette matt, så partiet blir remis.":"");
   if(c.in_checkmate()) return `${side} står i sjakk og har ingen lovlige trekk.`;
   if(c.in_stalemate()) return `${side} står ikke i sjakk, men har ingen lovlige trekk. Det kalles patt, og partiet blir remis. Pass på at motstanderen alltid har et trekk når du leder stort.`;
   if(c.in_threefold_repetition()) return "Samme stilling har oppstått tre ganger.";
@@ -910,20 +1024,28 @@ function gArchive(){ if(!Gm.chess||!gResult()) return; if(!Gm.gameId) Gm.gameId=
 function gCount(){ if(Gm.counted) return; Gm.counted=true; const r=gResult(); const mine=Gm.color==="w"?"1-0":"0-1";
   const k=r==="1/2-1/2"?"d":r===mine?"w":"l"; Gm.record[k]++; Gm.lastCounted=k; Gm.endedAt=Date.now(); gRecord(); gSave(); gArchive()}
 function gRecord(){const r=Gm.record||{w:0,d:0,l:0}; $("g-record").textContent=(r.w+r.d+r.l)?`Dine resultater mot boten: ${r.w} seire, ${r.d} remis, ${r.l} tap`:""}
-function gSave(){const d={gameId:Gm.gameId||null,endedAt:Gm.endedAt||null,pgn:Gm.chess?Gm.chess.pgn():"",color:Gm.color,rating:Gm.rating,resigned:!!Gm.resigned,active:!!Gm.chess,
+function clockState(){const c=Gm.clock; if(!c) return null; return {tc:c.tc,w:Math.round(clockLeft("w")),b:Math.round(clockLeft("b")),inc:c.inc,hist:c.hist}}
+function gSave(){const d={clock:clockState(),flag:Gm.flag||null,flagDraw:!!Gm.flagDraw,tc:Gm.tc,myTcs:Gm.myTcs,gameId:Gm.gameId||null,endedAt:Gm.endedAt||null,pgn:Gm.chess?Gm.chess.pgn():"",color:Gm.color,rating:Gm.rating,resigned:!!Gm.resigned,active:!!Gm.chess,
     pick:+$("g-rating").value,choice:Gm.choice,record:Gm.record,updated:Date.now()};
   store.set(STORE_G,d); acctSet("botgame",d)}
 async function gLoad(){ gRender(true); const remote=await acctGet("botgame"); const s=newer(remote||null,store.get(STORE_G)); if(!s) return;
   if(Gm.chess&&Gm.chess.history().length) return; // user already started playing while we loaded
   try{ Gm.record=Object.assign({w:0,d:0,l:0},s.record||{}); if(s.choice){Gm.choice=s.choice;document.querySelectorAll(".seg [data-color]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.color===s.choice?"true":"false"))}
     $("g-rating").value=s.pick||s.rating||1500; gSlider();
+    if(s.tc!==undefined) Gm.tc=s.tc; if(Array.isArray(s.myTcs)) Gm.myTcs=s.myTcs.slice();
     if(s.active!==false&&s.pgn!==undefined){const c=new Chess(); if(s.pgn) c.load_pgn(s.pgn); Gm.chess=c; Gm.color=s.color; Gm.rating=s.rating; Gm.resigned=!!s.resigned; Gm.flipped=s.color==="b";
-      Gm.gameId=s.gameId||("b_"+(s.updated||Date.now())); Gm.endedAt=s.endedAt||s.updated||null}
+      Gm.gameId=s.gameId||("b_"+(s.updated||Date.now())); Gm.endedAt=s.endedAt||s.updated||null;
+      Gm.flag=s.flag||null; Gm.flagDraw=!!s.flagDraw;
+      Gm.clock=s.clock?{tc:s.clock.tc,w:s.clock.w,b:s.clock.b,inc:s.clock.inc,running:null,since:0,hist:(s.clock.hist||[]).slice()}:null}
     Gm.counted=!!(Gm.chess&&gResult()); if(Gm.counted){await gamesReady; if(!Games.get(Gm.gameId)) gArchive()} gRender(true); gRecord(); gMaybeBot()}catch(e){gRender(true)}}
 $("g-new").onclick=()=>{Gm.resigned=false;gNew()};
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&Gm.chess&&!Gm.over&&Gm.clock) gSave()});
+tcRender(); clockLoop();
 $("g-flip").onclick=()=>{Gm.flipped=!Gm.flipped;gRender()};
-$("g-undo").onclick=()=>{const c=Gm.chess;if(!c||Gm.resigned)return; if(Gm.over&&Gm.counted){Gm.counted=false;gUncount()} gClearEnd(); Gm.token++; Gm.engine.stop(); Gm.thinking=false;
-  c.undo(); if(c.turn()!==Gm.color) c.undo(); gSave(); gRender(); gMaybeBot()};
+$("g-undo").onclick=()=>{const c=Gm.chess;if(!c||Gm.resigned)return; if(Gm.flag){Gm.over=true} if(Gm.over&&Gm.counted){Gm.counted=false;gUncount()} gClearEnd(); Gm.token++; Gm.engine.stop(); Gm.thinking=false;
+  c.undo(); if(c.turn()!==Gm.color) c.undo();
+  if(Gm.clock){const k=c.history().length, h=Gm.clock.hist[k]||Gm.clock.hist[0]; Gm.clock.running=null; Gm.clock.w=h.w; Gm.clock.b=h.b; Gm.clock.hist.length=k+1}
+  Gm.flag=null; Gm.flagDraw=false; gSave(); gRender(); gMaybeBot()};
 $("g-resign").onclick=()=>{$("g-confirm").hidden=false};
 $("g-no").onclick=()=>{$("g-confirm").hidden=true};
 $("g-yes").onclick=()=>{$("g-confirm").hidden=true;Gm.token++;Gm.engine.stop();Gm.thinking=false;Gm.resigned=true;gSave();gRender()};
@@ -967,7 +1089,8 @@ function gameMeta(g){ let parsed=null; try{parsed=g._p||(g._p=parsePGN(g.pgn))}c
   if(g.color&&r!=="*"){const mine=g.color==="w"?"1-0":"0-1"; cls=r==="1/2-1/2"?"d":r===mine?"w":"l"; txt=cls==="w"?"Seier":cls==="d"?"Remis":"Tap"}
   if(r==="*"){txt="Uferdig"}
   const W=H.White||"Hvit",B=H.Black||"Svart";
-  return {title:`${W} – ${B}`,sub:[op&&op.name,`${Math.ceil(plies/2)} trekk`].filter(Boolean).join(" · "),cls,txt}}
+  const tcH=H.TimeControl&&/^(\d+)\+(\d+)$/.exec(H.TimeControl); const tcTxt=tcH?`${fmtMin(+tcH[1]/60)}+${tcH[2]}`:null;
+  return {title:`${W} – ${B}`,sub:[tcTxt,op&&op.name,`${Math.ceil(plies/2)} trekk`].filter(Boolean).join(" · "),cls,txt}}
 function fmtDate(t){ if(!t) return ""; const d=new Date(t),now=new Date(); const same=d.toDateString()===now.toDateString();
   const y=new Date(now); y.setDate(now.getDate()-1);
   const hm=d.toLocaleTimeString("no-NO",{hour:"2-digit",minute:"2-digit"});
