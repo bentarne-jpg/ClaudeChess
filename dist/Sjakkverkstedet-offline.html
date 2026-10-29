@@ -187,8 +187,18 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 
 /* modules: each tab takes its own accent */
 body[data-tab="analyse"]{--accent:var(--m-an)} body[data-tab="notter"]{--accent:var(--m-pz)} body[data-tab="spill"]{--accent:var(--m-pl)}
-.tab > header{border-left:4px solid var(--accent);padding-left:14px}
-.tab > header .eyebrow{color:var(--accent)}
+.tab > header,.astep > header{border-left:4px solid var(--accent);padding-left:14px}
+.tab > header .eyebrow,.astep > header .eyebrow{color:var(--accent)}
+.astep{display:grid;gap:20px}
+.depthrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.resume{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:12px;align-items:center;text-align:left;font:inherit;color:var(--ink);cursor:pointer;border-left:4px solid var(--accent)}
+.resume .rl{grid-row:1/3;font-weight:700;color:var(--accent);font-size:14px;text-transform:uppercase;letter-spacing:.06em}
+.resume b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resume .chevr{grid-row:1/3;grid-column:3;font-size:26px;color:var(--accent)}
+.resume:hover{border-color:var(--accent)}
+.resume:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#a-choose .glist{max-height:none}
+#a-jumps button{font-family:var(--f-body);font-size:14px}
 .tabs a .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
 .tabs a[data-tab="analyse"] .dot{background:var(--m-an)} .tabs a[data-tab="notter"] .dot{background:var(--m-pz)} .tabs a[data-tab="spill"] .dot{background:var(--m-pl)}
 .tabs a[data-tab="analyse"][aria-current="page"]{background:var(--m-an)} .tabs a[data-tab="notter"][aria-current="page"]{background:var(--m-pz)} .tabs a[data-tab="spill"][aria-current="page"]{background:var(--m-pl)}
@@ -273,6 +283,7 @@ body[data-tab="analyse"]{--accent:var(--m-an)} body[data-tab="notter"]{--accent:
 .rating{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .rating .big{font-family:var(--f-mono);font-weight:700;font-size:44px;line-height:1}
 .rating .big small{font-size:14px;color:var(--muted);font-weight:500}
+#p-statsbtn{display:none}
 .delta{font-family:var(--f-mono);font-weight:700;font-size:16px}
 .delta.up{color:var(--ok)} .delta.down{color:var(--err)}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -335,9 +346,12 @@ footer p{margin:0}
   .brand{font-size:18px}
   .tab{display:flex;flex-direction:column;gap:8px}
   .tab .main,.tab .boardcol,.tab .panel{display:contents}
-  .tab > header{padding-left:10px;border-left-width:3px}
-  .tab > header .eyebrow,.tab > header p{display:none}
-  .tab > header h1{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tab > header,.astep > header{padding-left:10px;border-left-width:3px}
+  .tab > header .eyebrow,.tab > header p,#a-view > header .eyebrow,#a-view > header p,#a-choose > header .eyebrow{display:none}
+  .tab > header h1,.astep > header h1{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #a-choose > header p{font-size:14px;margin:2px 0 0}
+  .astep{display:flex;flex-direction:column;gap:8px}
+  #a-choose .glist{max-height:calc(100dvh - 330px)}
   .opening{margin-top:4px;font-size:12.5px}
   .card{padding:10px 12px}
   .controls{gap:6px} .controls button{height:38px;min-width:0;flex:1;font-size:15px}
@@ -368,19 +382,25 @@ footer p{margin:0}
   #g-new{width:100%}
   /* puzzles */
   #tab-notter > header{order:1} #p-board{order:2} #tab-notter .controls{order:3} #p-start{order:4} #p-puzzle{order:5} #p-ratingcard{order:6}
-  #p-board{width:min(100%,calc(100dvh - 300px));min-width:240px}
+  #p-board{width:min(100%,calc(100dvh - 320px));min-width:220px}
   #tab-notter.pickmode #p-board,#tab-notter.pickmode .controls{display:none}
-  #p-ratingcard .big{font-size:30px} #p-ratingcard .spark{height:44px}
+  #p-ratingcard{padding:8px 12px}
+  #p-ratingcard .rating{align-items:center;flex-wrap:nowrap} #p-ratingcard .rating .eyebrow{margin:0;font-size:11px}
+  #p-ratingcard .big{font-size:24px} #p-ratingcard .spark{height:44px}
+  #p-statsbtn{display:inline-flex;margin-left:auto}
+  #p-ratingcard:not(.open) > :not(.rating){display:none}
+  #p-puzzle{padding:8px 12px;gap:4px} #p-puzzle .pstatus{font-size:15px} #p-msg:empty{display:none}
   .levels{grid-template-columns:repeat(2,1fr)}
   /* analysis */
-  #tab-analyse > header{order:1} #a-progress{order:2} #tab-analyse .boardrow{order:3} #tab-analyse .controls{order:4} #a-card{order:5}
-  #a-summary{order:6} #tab-analyse .list{order:7} #tab-analyse .graphwrap{order:8} #tab-analyse .panel > details{order:9} #a-pick{order:10}
-  #tab-analyse .boardrow{width:min(100%,calc(100dvh - 345px + 26px));min-width:250px;margin-inline:auto}
+  #a-view > header{order:1} #a-progress{order:2} #tab-analyse .boardrow{order:3} #a-nav{order:4} #a-jumps{order:5} #a-card{order:6}
+  #a-summary{order:7} #tab-analyse .list{order:8} #tab-analyse .graphwrap{order:9} #tab-analyse .panel > details{order:10}
+  #tab-analyse .boardrow{width:min(100%,calc(100dvh - 380px + 26px));min-width:250px;margin-inline:auto}
+  #a-view .ahead-act .btn{height:34px;font-size:14px}
   .ahead{gap:8px} .ahead-act{width:100%} .ahead-act .btn{flex:1}
   #a-card{gap:4px} #a-card .mvname{font-size:18px} #a-card .note{font-size:14px}
   .summary{grid-template-columns:1fr 1fr}
 }
-@supports not (height:1dvh){@media (max-width:700px){#g-board{width:min(100%,calc(100vh - 392px))} #p-board{width:min(100%,calc(100vh - 300px))} #tab-analyse .boardrow{width:min(100%,calc(100vh - 274px))}}}
+@supports not (height:1dvh){@media (max-width:700px){#g-board{width:min(100%,calc(100vh - 392px))} #p-board{width:min(100%,calc(100vh - 320px))} #tab-analyse .boardrow{width:min(100%,calc(100vh - 354px))}}}
 @media (max-width:420px){.boardrow{grid-template-columns:20px minmax(0,1fr);gap:6px} .evalbar .lbl{font-size:8.5px} .controls button{min-width:0;flex:1} .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .promo button{width:52px;height:52px}}
 @media (prefers-reduced-motion:reduce){.evalbar .w,.progress .fill{transition:none}}
 </style>
@@ -409,41 +429,58 @@ footer p{margin:0}
 
   <!-- ============ ANALYSE ============ -->
   <section class="tab" id="tab-analyse" hidden>
-    <header class="ahead">
-      <div class="ahead-text">
-        <p class="eyebrow" id="a-eyebrow">Partianalyse</p>
-        <h1 id="a-title">Laster …</h1>
-        <p id="a-sub"></p>
-        <div class="opening" id="a-opening" hidden><span class="eco"></span><span></span></div>
+    <!-- Step 1: choose what to analyse -->
+    <div class="astep" id="a-choose">
+      <header>
+        <p class="eyebrow">Analyse</p>
+        <h1>Hva vil du analysere?</h1>
+        <p>Velg et av partiene dine, eller lim inn en PGN. Analysen starter med en gang.</p>
+      </header>
+      <button class="card resume" id="a-resume" type="button" hidden><span class="rl">Fortsett</span><b id="a-resumetitle"></b><span class="hint" id="a-resumesub"></span><span class="chevr">›</span></button>
+      <div class="depthrow">
+        <span class="hint">Dybde</span>
+        <div class="seg" id="a-depthseg" role="group" aria-label="Analysedybde">
+          <button type="button" data-depth="12" aria-pressed="false">Rask</button>
+          <button type="button" data-depth="16" aria-pressed="true">Normal</button>
+          <button type="button" data-depth="20" aria-pressed="false">Grundig</button>
+        </div>
+        <span class="hint" id="a-depthhint"></span>
       </div>
-      <div class="ahead-act">
-        <button class="btn primary" id="a-analyze" type="button">Analyser</button>
-        <label class="sel" for="a-depth">Dybde
-          <select id="a-depth"><option value="12">Rask (12)</option><option value="16" selected>Normal (16)</option><option value="20">Grundig (20)</option></select>
-        </label>
-      </div>
-    </header>
-    <details class="card fold games" id="a-pick">
-      <summary><h2>Mine partier</h2><span class="hint" id="a-gcount"></span><span class="chev" data-closed="Bytt parti"></span></summary>
-      <div class="fbody">
-      <div class="glist" id="a-games" role="listbox" aria-label="Velg parti"></div>
-    <details class="mini intake" id="a-intake">
-      <summary>Legg til et parti med PGN</summary>
-      <div class="body">
-        <label for="a-pgn" class="hint">Lim inn PGN-en (på chess.com: <b>Del</b> → <b>PGN</b> → Kopier). Kommentarer, klokketider og varianter blir ignorert.</label>
-        <textarea id="a-pgn" spellcheck="false" placeholder='[White "Navn"]
+      <section class="card games" aria-label="Mine siste partier">
+        <div class="games-head"><h2>Mine siste partier</h2><span class="hint" id="a-gcount"></span></div>
+        <div class="glist" id="a-games" role="list"></div>
+      </section>
+      <details class="card fold" id="a-intake">
+        <summary><h2>Lim inn PGN</h2><span class="chev" data-closed="Vis"></span></summary>
+        <div class="fbody">
+          <label for="a-pgn" class="hint">På chess.com: <b>Del</b> → <b>PGN</b> → Kopier. Kommentarer, klokketider og varianter blir ignorert.</label>
+          <textarea id="a-pgn" spellcheck="false" placeholder='[White "Navn"]
 [Black "Navn"]
 
 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 …'></textarea>
-        <div class="row">
-          <button class="btn primary" id="a-go" type="button">Legg til og analyser</button>
-          <label class="btn filebtn" for="a-file">Åpne .pgn-fil<input type="file" id="a-file" accept=".pgn,.txt,text/plain"></label>
+          <div class="row">
+            <button class="btn primary" id="a-go" type="button">Analyser</button>
+            <label class="btn filebtn" for="a-file">Åpne .pgn-fil<input type="file" id="a-file" accept=".pgn,.txt,text/plain"></label>
+          </div>
+          <p class="msg" id="a-msg" role="status"></p>
         </div>
-        <p class="msg" id="a-msg" role="status"></p>
-      </div>
-    </details>
-      </div>
-    </details>
+      </details>
+    </div>
+
+    <!-- Step 2: the analysis -->
+    <div class="astep" id="a-view" hidden>
+      <header class="ahead">
+        <div class="ahead-text">
+          <p class="eyebrow" id="a-eyebrow">Analyse</p>
+          <h1 id="a-title"></h1>
+          <p id="a-sub"></p>
+          <div class="opening" id="a-opening" hidden><span class="eco"></span><span></span></div>
+        </div>
+        <div class="ahead-act">
+          <button class="btn" id="a-new" type="button">Ny analyse</button>
+          <button class="btn" id="a-analyze" type="button" hidden>Analyser grundigere</button>
+        </div>
+      </header>
     <div class="progress" id="a-progress" hidden>
       <div class="track"><div class="fill" id="a-pfill"></div></div>
       <div class="txt"><span id="a-ptxt">Laster sjakkmotoren …</span><button class="btn small" id="a-stop" type="button">Stopp</button></div>
@@ -457,12 +494,16 @@ footer p{margin:0}
           </div>
           <div class="board" id="a-board" role="img" aria-label="Sjakkbrett"></div>
         </div>
-        <div class="controls">
+        <div class="controls" id="a-nav">
           <button id="a-first" aria-label="Til start">|&lt;</button>
           <button id="a-prev" aria-label="Forrige trekk">&lt;</button>
           <button id="a-next" aria-label="Neste trekk">&gt;</button>
           <button id="a-last" aria-label="Til slutt">&gt;|</button>
           <button id="a-flip" class="txt" aria-label="Snu brettet">Snu</button>
+        </div>
+        <div class="controls" id="a-jumps">
+          <button id="a-preverr" class="txt">‹ Forrige</button>
+          <button id="a-nexterr" class="txt">Neste feil ›</button>
         </div>
         <div class="graphwrap">
           <div class="cap"><span>Hvit leder ↑</span><span>Klikk for å hoppe til et trekk</span></div>
@@ -476,6 +517,7 @@ footer p{margin:0}
         <details class="mini"><summary>Hva betyr merkene?</summary><div class="legend" id="a-legend"></div></details>
       </div>
     </section>
+    </div>
   </section>
 
   <!-- ============ NØTTER ============ -->
@@ -516,6 +558,7 @@ footer p{margin:0}
           <div class="rating">
             <div><p class="eyebrow">Din nøtterating</p><div class="big" id="p-rating">–</div></div>
             <div class="delta" id="p-delta"></div>
+            <button class="btn small" id="p-statsbtn" type="button" aria-expanded="false">Statistikk</button>
           </div>
           <svg class="spark" id="p-spark" aria-label="Ratingutvikling"></svg>
           <div class="stats">
@@ -603,7 +646,7 @@ footer p{margin:0}
   </section>
 
   <footer id="footer">
-    <p data-for="analyse">Bla med <span class="kbd">←</span> og <span class="kbd">→</span>, klikk på et trekk eller i grafen. Trekkene merkes etter hvor mye vinnersjansen endrer seg, slik chess.com gjør. Åpningsnavn fra lichess-org/chess-openings.</p>
+    <p data-for="analyse">I analysen: bla med <span class="kbd">←</span> og <span class="kbd">→</span>, klikk på et trekk eller i grafen, eller hopp mellom feilene. Trekkene merkes etter hvor mye vinnersjansen endrer seg, slik chess.com gjør.</p>
     <p data-for="notter">Nøttene kommer fra Lichess' åpne nøttedatabase (CC0): 24 595 nøtter fra 400 til 3166 i rating. Ratingen din er foreløpig, merket med «?», de første 10 nøttene.</p>
     <p data-for="spill">Bla i partiet med <span class="kbd">←</span> og <span class="kbd">→</span> eller ved å klikke på et trekk. Det endrer ikke partiet, og klokken går videre. Botens styrke er omtrentlig.</p>
     <p>Sjakkmotor: Stockfish 10 (GPL), som kjører i nettleseren din. Åpninger og nøtter fra Lichess (CC0). Brikker: cburnett.</p>
@@ -2601,7 +2644,7 @@ function aClassify(k){
   const before=cpOf(Ar.lines[0]); const match=Ar.lines.find(l=>l.pv[0]===m.uci); const T=G.term[k];
   const after=T?(T.mate===0?10000:0):match?cpOf(match):-cpOf(Br.lines[0]);
   const loss=Math.max(0,wpc(before)-wpc(after)); const legal=new Chess(m.fenBefore).moves().length; let cls;
-  if(G.op.book[k]) cls="book";
+  if(G.op.book[k]&&loss<=10&&!(after<=-9000&&before>-9000)) cls="book"; // named theory, unless the move is a real mistake
   else if(legal===1) cls="forced";
   else if(m.uci===Ar.best||(match&&cpOf(match)===before)){cls="best";const second=Ar.lines[1]?cpOf(Ar.lines[1]):null;const pm=G.moves[k-2];const recap=pm&&pm.to===m.to;
     if(second!=null&&wpc(before)-wpc(second)>=10&&wpc(before)<97&&!recap) cls="great";
@@ -2629,21 +2672,52 @@ function aShow(id){ const g=Games.get(id); if(!g) return false; A.job++; A.engin
 /* Analyse the selected game (or a new PGN) and store the result with the game. */
 async function aRun(text,o={}){
   const msg=$("a-msg"); msg.className="msg"; msg.textContent=""; let parsed;
-  try{parsed=parsePGN(text)}catch(e){msg.className="msg err";msg.textContent=e.message;$("a-pick").open=true;$("a-intake").open=true;return}
-  const depth=+$("a-depth").value, my=++A.job; A.engine.stop(); await openingsReady;
+  try{parsed=parsePGN(text)}catch(e){msg.className="msg err";msg.textContent=e.message;aMode("choose");$("a-intake").open=true;return}
+  const depth=o.depth||A.depth, my=++A.job; A.engine.stop(); await openingsReady; aMode("view");
   const id=o.gameId||Games.addPgn(text,parsed); A.gameId=id; Games.remember(id);
-  aNewGame(parsed,{depth,pgn:text,flip:o.flip!==undefined?o.flip:(Games.get(id)||{}).color==="b"}); $("a-intake").open=false; $("a-pick").open=false; aGames(true);
+  aNewGame(parsed,{depth,pgn:text,flip:o.flip!==undefined?o.flip:(Games.get(id)||{}).color==="b"}); $("a-intake").open=false; $("a-pgn").value=""; aGames();
   A.running=true; aActBtn(); const G=A.G,N=G.moves.length,total=N+1,t0=Date.now(); $("a-progress").hidden=false; aProg(0,total,"Laster sjakkmotoren …");
   try{await A.engine.newGame()}catch(e){$("a-ptxt").textContent="Sjakkmotoren kunne ikke starte i denne nettleseren.";return}
   for(let i=0;i<=N;i++){ if(my!==A.job) return; aProg(i,total,`Analyserer stilling ${i+1} av ${total} · dybde ${depth}`);
     if(!G.term[i]){const r=await A.engine.search(G.fens[i],{depth,multipv:3}); if(my!==A.job) return; G.raw[i]=r; G.evals[i]=aWhiteEval(i)}
     if(i>=1) G.res[i-1]=aClassify(i); aUpdate()}
   const s=Math.round((Date.now()-t0)/1000); aProg(total,total,`Ferdig · ${N} trekk analysert på ${s>=60?Math.floor(s/60)+" min "+(s%60)+" s":s+" s"}`); $("a-stop").hidden=true;
-  Games.setAnalysis(id,{depth,evals:G.evals,res:G.res,acc:{w:aAcc("w"),b:aAcc("b")}}); A.running=false; aUpdate(); aGames()}
+  Games.setAnalysis(id,{depth,evals:G.evals,res:G.res,acc:{w:aAcc("w"),b:aAcc("b")}}); A.running=false; aUpdate(); aGames();
+  setTimeout(()=>{if(!A.running&&my===A.job) $("a-progress").hidden=true},2500)}
 function aProg(i,t,txt){$("a-pfill").style.width=(i/t*100)+"%";$("a-ptxt").textContent=txt;$("a-stop").hidden=false}
 function aAnalysed(){return A.G&&A.G.res.length>0&&A.G.res.every(Boolean)}
-function aActBtn(){const b=$("a-analyze"); b.disabled=!!A.running||!A.G; b.textContent=A.running?"Analyserer …":aAnalysed()?"Analyser på nytt":"Analyser"}
-$("a-analyze").onclick=()=>{const g=Games.get(A.gameId); if(g) aRun(g.pgn,{gameId:g.id})};
+/* The extra button only offers what makes sense: finish a stopped analysis, or go deeper. */
+function aActBtn(){const b=$("a-analyze"); if(!b) return; const done=aAnalysed(), d=(A.G&&A.G.depth)||0, g=Games.get(A.gameId);
+  b.hidden=!A.G||!!A.running||(done&&d>=20)||(!!g&&g.source==="example"&&done);
+  b.textContent=done?"Analyser grundigere":"Fullfør analysen"; aJumps()}
+$("a-analyze").onclick=()=>{const g=Games.get(A.gameId); if(g) aRun(g.pgn,{gameId:g.id,depth:aAnalysed()?20:Math.max(A.depth,(A.G&&A.G.depth)||0)})};
+$("a-new").onclick=()=>aMode("choose");
+/* Jump between the mistakes (yours when we know your colour, otherwise both sides). */
+const ERRS=["inaccuracy","mistake","blunder"];
+function aErrPlies(){ if(!A.G) return []; const me=(Games.get(A.gameId)||{}).color;
+  return A.G.res.map((r,i)=>r&&ERRS.includes(r.cls)&&(!me||A.G.moves[i].c===me)?i+1:0).filter(Boolean)}
+function aJumps(){ const L=aErrPlies(), cur=A.cur||0;
+  $("a-preverr").disabled=!L.some(p=>p<cur); $("a-nexterr").disabled=!L.some(p=>p>cur);
+  const me=(Games.get(A.gameId)||{}).color; $("a-nexterr").textContent=me?"Neste feil du gjorde ›":"Neste feil ›";
+  $("a-jumps").title=L.length?`${L.length} unøyaktigheter, feil og blundere${me?" fra deg":""}`:"Ingen feil funnet"}
+$("a-preverr").onclick=()=>{const L=aErrPlies().filter(p=>p<A.cur); if(L.length) aGo(L[L.length-1])};
+$("a-nexterr").onclick=()=>{const L=aErrPlies().filter(p=>p>A.cur); if(L.length) aGo(L[0])};
+/* Two steps: choose a game (or PGN), then the analysis itself. */
+A.depth=+(store.get("analyse-dybde")||16);
+const DEPTH_HINT={12:"Rask: ferdig på noen sekunder.",16:"Normal: god balanse mellom tid og presisjon.",20:"Grundig: mest presis, tar et par minutter for lange partier."};
+function aDepthDraw(){document.querySelectorAll("#a-depthseg [data-depth]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.depth===A.depth?"true":"false")); $("a-depthhint").textContent=DEPTH_HINT[A.depth]||""}
+document.querySelectorAll("#a-depthseg [data-depth]").forEach(b=>b.onclick=()=>{A.depth=+b.dataset.depth; store.set("analyse-dybde",A.depth); aDepthDraw()});
+function aMode(m){ A.mode=m; $("a-choose").hidden=m!=="choose"; $("a-view").hidden=m!=="view";
+  if(m==="choose"){ aGames(); aDepthDraw(); const g=A.gameId&&Games.get(A.gameId);
+    $("a-resume").hidden=!(A.G&&g); if(A.G&&g){const meta=gameMeta(g); $("a-resumetitle").textContent=meta.title;
+      $("a-resumesub").textContent=A.running?"Analyseres nå":aAnalysed()?"Analysert":"Ikke ferdig analysert"} }
+  else { sizeBar() } window.scrollTo(0,0)}
+$("a-resume").onclick=()=>aMode("view");
+/* Open a game: show the saved analysis, or start analysing straight away. */
+function aOpen(id){ const g=Games.get(id); if(!g) return; A.userPicked=true;
+  const has=!!(g.analysis&&g.analysis.res&&g.analysis.res.length&&g.analysis.res.every(Boolean));
+  if(A.gameId===id&&A.G&&(A.running||has)){aMode("view");return}
+  aMode("view"); aShow(id); if(!has) aRun(g.pgn,{gameId:id})}
 function aHeader(){const G=A.G,h=G.headers,W=h.White||"Hvit",B=h.Black||"Svart",elo=x=>x&&x!=="?"?` (${x})`:"";
   $("a-title").textContent=`${W}${elo(h.WhiteElo)} – ${B}${elo(h.BlackElo)}`; $("a-eyebrow").textContent=G.example?"Fra chess.com":"Partianalyse";
   const bits=[]; if(h.Event&&h.Event!=="?")bits.push(h.Event); if(h.Date&&!/^\?/.test(h.Date))bits.push(h.Date.replace(/\.\?\?/g,""));
@@ -2656,7 +2730,7 @@ function aSummary(){const G=A.G,sum=$("a-summary"),h=G.headers; sum.innerHTML=""
     const a=aAcc(c),el=document.createElement("div");el.className="card";
     el.innerHTML=`<div class="side-head"><b></b><span class="acc">${a==null?"–":a.toFixed(1)}<small>Nøyaktighet</small></span></div><div class="counts">${ORDER.filter(k=>cnt[k]).map(k=>`<span class="chip">${icon(k)}<span class="n">${cnt[k]}</span>${CLS[k].n}</span>`).join("")||'<span class="hint">Venter på analyse …</span>'}</div>`;
     el.querySelector("b").textContent=n+(c==="w"?" · hvit":" · svart"); sum.appendChild(el)})}
-function aRender(){
+function aRender(){ if(!A.G) return;
   const G=A.G,N=G.moves.length,cur=A.cur,mv=cur>0?G.moves[cur-1]:null,rs=cur>0?G.res[cur-1]:null;
   A.board.set({fen:G.fens[cur],flipped:A.flipped,animate:Math.abs(cur-(A.prevCur??cur))===1,last:mv?{from:mv.from,to:mv.to}:null,badge:mv?{sq:mv.to,cls:rs?rs.cls:"pending"}:null,
     arrow:rs&&rs.bu&&!NOBEST.includes(rs.cls)?rs.bu:null});
@@ -2692,7 +2766,8 @@ const aGo=i=>{A.cur=Math.max(0,Math.min(A.G.moves.length,i));aRender()};
 $("a-first").onclick=()=>aGo(0);$("a-prev").onclick=()=>aGo(A.cur-1);$("a-next").onclick=()=>aGo(A.cur+1);$("a-last").onclick=()=>aGo(A.G.moves.length);
 $("a-flip").onclick=()=>{A.flipped=!A.flipped;aRender()};
 $("a-go").onclick=()=>{A.userPicked=true;aRun($("a-pgn").value)};
-$("a-stop").onclick=()=>{A.job++;A.engine.stop();A.running=false;aActBtn();$("a-ptxt").textContent="Analysen ble stoppet. Trekkene som er ferdige, vises.";$("a-stop").hidden=true};
+$("a-pgn").addEventListener("input",()=>{$("a-msg").textContent=""});
+$("a-stop").onclick=()=>{A.job++;A.engine.stop();A.running=false;aActBtn();aGames();$("a-ptxt").textContent="Analysen ble stoppet. Trekkene som er ferdige, vises.";$("a-stop").hidden=true};
 $("a-file").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("a-pgn").value=r.result;aRun(r.result)};r.readAsText(f);e.target.value=""});
 function sizeBar(){$("a-evalbar").style.height=$("a-board").getBoundingClientRect().height+"px"}
 new ResizeObserver(sizeBar).observe($("a-board"));
@@ -2826,6 +2901,7 @@ function pStats(){const pr=P.profile; $("p-ratingcard").hidden=$("p-puzzle").hid
   const mn=Math.min(...h)-20,mx=Math.max(...h)+20,x=i=>i/(h.length-1)*W,y=v=>H-6-(v-mn)/(mx-mn)*(H-12);
   const pts=h.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   S.innerHTML=`<polygon points="0,${H} ${pts} ${W},${H}" fill="var(--accent)" opacity=".12"/><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="${x(h.length-1)}" cy="${y(h[h.length-1])}" r="3.5" fill="var(--accent)"/>`}
+$("p-statsbtn").onclick=()=>{const c=$("p-ratingcard"),o=!c.classList.contains("open"); c.classList.toggle("open",o); $("p-statsbtn").setAttribute("aria-expanded",String(o)); $("p-statsbtn").textContent=o?"Skjul":"Statistikk"};
 $("p-reset").onclick=()=>{const row=$("p-resetrow");row.innerHTML=`<span>Starte på nytt med ny rating?</span><button class="btn small" id="p-reset-yes" type="button">Ja, nullstill</button><button class="btn small" id="p-reset-no" type="button">Avbryt</button>`;
   $("p-reset-no").onclick=()=>{row.innerHTML="";row.appendChild(resetBtn)}; $("p-reset-yes").onclick=async()=>{P.profile=null;store.set(STORE_P,null); acctSet("puzzleprofile",null); row.innerHTML="";row.appendChild(resetBtn);
     $("p-start").hidden=false;$("p-status").textContent="Velg startnivå for å begynne";$("p-delta").textContent="";P.cur=null;P.board.set({movable:null});pStats()}};
@@ -2989,7 +3065,7 @@ function gUncount(){const r=Gm.lastCounted; if(r&&Gm.record[r]>0) Gm.record[r]--
 function gArchive(){ if(!Gm.chess||!gResult()) return; if(!Gm.gameId) Gm.gameId="b_"+Date.now(); Gm.endedAt=Gm.endedAt||Date.now();
   const old=Games.get(Gm.gameId); const pgn=gPgn(); if(old&&old.pgn===pgn) return;
   Games.put({id:Gm.gameId,source:"bot",pgn,color:Gm.color,botRating:Gm.rating,result:gResult(),ended:Gm.endedAt});
-  if(!A.userPicked&&!A.running) aShow(Gm.gameId)} // the newest game is what the analysis tab opens on
+  aGames()}
 function gCount(){ if(Gm.counted) return; Gm.counted=true; const r=gResult(); const mine=Gm.color==="w"?"1-0":"0-1";
   const k=r==="1/2-1/2"?"d":r===mine?"w":"l"; Gm.record[k]++; Gm.lastCounted=k; Gm.endedAt=Date.now(); gRecord(); gSave(); gArchive()}
 function gRecord(){const r=Gm.record||{w:0,d:0,l:0}; $("g-record").textContent=(r.w+r.d+r.l)?`Dine resultater mot boten: ${r.w} seire, ${r.d} remis, ${r.l} tap`:""}
@@ -3025,8 +3101,7 @@ $("g-undo").onclick=()=>{const c=Gm.chess;if(!c||Gm.resigned)return; Gm.view=nul
 $("g-resign").onclick=()=>{$("g-confirm").hidden=false};
 $("g-no").onclick=()=>{$("g-confirm").hidden=true};
 $("g-yes").onclick=()=>{$("g-confirm").hidden=true;Gm.token++;Gm.engine.stop();Gm.thinking=false;Gm.resigned=true;gSave();gRender()};
-$("g-analyse").onclick=async()=>{await gamesReady; gArchive(); const g=Games.get(Gm.gameId); location.hash="#analyse";
-  if(g&&g.analysis) aShow(g.id); else aRun(gPgn(),{gameId:g?g.id:undefined,flip:Gm.color==="b"})};
+$("g-analyse").onclick=async()=>{await gamesReady; gArchive(); const g=Games.get(Gm.gameId); A.next=g?g.id:null; location.hash="#analyse"};
 
 /* =====================================================================
    MY GAMES — finished games vs the bot and PGNs you add, with saved analysis.
@@ -3075,21 +3150,19 @@ function aGames(scroll){ const el=$("a-games"); if(!el) return; const L=Games.al
   const n=L.length-1; $("a-gcount").textContent=`${L.length} ${L.length===1?"parti":"partier"}`;
   if(!n){const e=document.createElement("div");e.className="gempty";e.textContent="Når du har spilt ferdig et parti mot boten, havner det her. Du kan også legge til partier med PGN.";el.appendChild(e)}
   for(const g of L){ const m=gameMeta(g), sel=g.id===A.gameId, an=!!(g.analysis&&g.analysis.res);
-    const row=document.createElement("div"); row.className="grow"; row.setAttribute("role","option"); row.setAttribute("aria-selected",sel?"true":"false"); row.tabIndex=0; row.dataset.id=g.id;
+    const row=document.createElement("div"); row.className="grow"; row.setAttribute("role","button"); row.setAttribute("aria-selected","false"); row.tabIndex=0; row.dataset.id=g.id;
     row.innerHTML=`<span class="gd">${g.source==="example"?"chess.com":fmtDate(g.ended)}</span><span class="gt"><b></b><span></span></span><span class="res ${m.cls}"></span><span class="gs"></span>`;
     row.querySelector(".gt b").textContent=m.title; row.querySelector(".gt span").textContent=m.sub; row.querySelector(".res").textContent=m.txt;
     const gs=row.querySelector(".gs"); const myAcc=an&&g.analysis.acc&&g.color?g.analysis.acc[g.color]:null;
-    if(sel&&A.running){gs.textContent="Analyserer …"}
-    else if(sel&&!an){const b=document.createElement("button");b.className="btn primary";b.type="button";b.textContent="Analyser";b.onclick=e=>{e.stopPropagation();aRun(g.pgn,{gameId:g.id})};gs.appendChild(b)}
+    if(sel&&A.running){gs.textContent="Analyseres nå"}
     else if(an){gs.innerHTML=myAcc!=null?`Nøyaktighet <span class="acc1">${myAcc.toFixed(1)}</span>`:"Analysert"}
-    else gs.textContent="Ikke analysert";
+    else gs.textContent="Ikke analysert ennå";
     el.appendChild(row);
     if(sel&&scroll){const L=$("a-games"), top=row.offsetTop-L.offsetTop; if(top<L.scrollTop||top+row.offsetHeight>L.scrollTop+L.clientHeight) L.scrollTop=top}}}
-$("a-games").addEventListener("click",e=>{const r=e.target.closest(".grow"); if(r&&!e.target.closest(".btn")){A.userPicked=true; if(r.dataset.id!==A.gameId){aShow(r.dataset.id); $("a-pick").open=false; window.scrollTo({top:0,behavior:"smooth"})}}});
+$("a-games").addEventListener("click",e=>{const r=e.target.closest(".grow"); if(r) aOpen(r.dataset.id)});
 $("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); if(!r) return;
-  A.userPicked=true;
-  if(e.key==="Enter"||e.key===" "){e.preventDefault(); if(r.dataset.id!==A.gameId) aShow(r.dataset.id)}
-  else if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault(); const n=e.key==="ArrowDown"?r.nextElementSibling:r.previousElementSibling; if(n&&n.classList.contains("grow")){n.focus(); aShow(n.dataset.id); $("a-games").querySelector(`[data-id="${n.dataset.id}"]`).focus()}}
+  if(e.key==="Enter"||e.key===" "){e.preventDefault(); aOpen(r.dataset.id)}
+  else if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault(); const n=e.key==="ArrowDown"?r.nextElementSibling:r.previousElementSibling; if(n&&n.classList.contains("grow")) n.focus()}
   e.stopPropagation()});
 
 /* =====================================================================
@@ -3100,7 +3173,8 @@ function route(){const t=TABS.includes(location.hash.slice(1))?location.hash.sli
   TABS.forEach(x=>{$("tab-"+x).hidden=x!==t}); document.body.dataset.tab=t;
   $("modname").textContent={analyse:"Analyse",notter:"Sjakknøtter",spill:"Spill mot bot"}[t]||"";
   document.querySelectorAll("#footer [data-for]").forEach(p=>p.hidden=p.dataset.for!==t);
-  if(t==="notter") pInit(); if(t==="analyse") sizeBar(); if(t==="hjem") homeRender(); window.scrollTo(0,0)}
+  if(t==="notter") pInit();
+  if(t==="analyse"){ if(A.next){const id=A.next; A.next=null; aOpen(id)} else aMode(A.running&&A.mode==="view"?"view":"choose") } if(t==="hjem") homeRender(); window.scrollTo(0,0)}
 /* Home: one card per module, each with a line about where you left off. */
 $("h-ic-pl").src=PIECES.wking; $("h-ic-pz").src=PIECES.wknight; $("h-ic-an").src=PIECES.wqueen;
 async function homeRender(){
@@ -3108,11 +3182,12 @@ async function homeRender(){
   $("h-st-pl").textContent=c&&!Gm.over&&c.history().length?`Parti i gang · ${Math.ceil(c.history().length/2)} trekk${Gm.clock?" · "+tcLabel(Gm.clock.tc):""}. Fortsett der du slapp.`
     :(r.w+r.d+r.l)?`Dine resultater: ${r.w} seire, ${r.d} remis, ${r.l} tap`:"Velg styrke og tid, og sett i gang.";
   const L=Games.all(), last=L[0]; if(last){const m=gameMeta(last); $("h-st-an").textContent=`Siste parti: ${m.title} · ${m.txt}`}
+  if(A.running) $("h-st-an").textContent="Analyse pågår – trykk for å se den";
   let pr=P.profile; if(!pr){ pr=store.get(STORE_P); if(!pr){ const remote=await acctGet("puzzleprofile"); if(remote) pr=remote } }
   $("h-st-pz").textContent=pr?`Din nøtterating: ${pr.rating}${pr.games<10?" (foreløpig)":""} · ${pr.solved} løst`:"Velg startnivå og løs din første nøtt."}
 window.addEventListener("hashchange",route);
 document.addEventListener("keydown",e=>{if(/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName))return;
-  if(!$("tab-analyse").hidden){
+  if(!$("tab-analyse").hidden&&A.G&&!$("a-view").hidden){
     if(e.key==="ArrowRight"){aGo(A.cur+1);e.preventDefault()}else if(e.key==="ArrowLeft"){aGo(A.cur-1);e.preventDefault()}else if(e.key==="Home")aGo(0);else if(e.key==="End")aGo(A.G.moves.length)}
   else if(!$("tab-spill").hidden&&Gm.chess){ const n=Gm.chess.history().length, at=Gm.view??n;
     if(e.key==="ArrowRight"){gView(at+1);e.preventDefault()}else if(e.key==="ArrowLeft"){gView(at-1);e.preventDefault()}else if(e.key==="Home"){gView(0);e.preventDefault()}else if(e.key==="End"){gView(Infinity);e.preventDefault()}}});
@@ -3120,7 +3195,7 @@ document.addEventListener("keydown",e=>{if(/^(TEXTAREA|INPUT|SELECT)$/.test(e.ta
 openingsReady.then(()=>{ if(A.G){A.G.op=openingInfo(A.G.fens);aHeader()} if(Gm.chess) gRender(true); aGames()});
 // show the browser's copy at once, then refresh from the account
 Games.list=(store.get(STORE_GL)||[]);
-function aStart(){ if(!A.running&&!A.userPicked) aShow(Games.all()[0].id)} // always open on the most recent game
+function aStart(){ aGames() }
 aStart();
 const gamesReady=Games.load().then(()=>{ if(!A.running){ const before=A.gameId; aStart(); if(A.gameId===before) aGames() } if(!$("tab-hjem").hidden) homeRender() });
 gLoad().then(()=>{ if(!$("tab-hjem").hidden) homeRender() }); route(); sizeBar();
