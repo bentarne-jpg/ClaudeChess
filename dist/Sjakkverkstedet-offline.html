@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sjakkverkstedet (offline)</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,7 +42,15 @@ body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:1
 .hint{font-size:13px;color:var(--muted);margin:0}
 
 /* app bar */
-.appbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.appbar{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;min-height:44px}
+.homebtn{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;text-decoration:none;color:var(--ink);border:1px solid var(--line);background:var(--surface);border-radius:8px;height:36px;padding:0 12px}
+.homebtn svg{width:18px;height:18px}
+.homebtn:hover{border-color:var(--accent)}
+.homebtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.modname{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:17px;color:var(--accent);display:inline-flex;align-items:center;gap:8px}
+.modname::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent)}
+body[data-tab="hjem"] .homebtn,body[data-tab="hjem"] .modname{display:none}
+body:not([data-tab="hjem"]) .brand{display:none}
 .brand{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
 .brand svg{width:22px;height:22px}
 .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;flex-wrap:wrap}
@@ -175,7 +183,7 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .legend span{display:inline-flex;align-items:center;gap:5px}
 
 /* modules: each tab takes its own accent */
-#tab-analyse{--accent:var(--m-an)} #tab-notter{--accent:var(--m-pz)} #tab-spill{--accent:var(--m-pl)}
+body[data-tab="analyse"]{--accent:var(--m-an)} body[data-tab="notter"]{--accent:var(--m-pz)} body[data-tab="spill"]{--accent:var(--m-pl)}
 .tab > header{border-left:4px solid var(--accent);padding-left:14px}
 .tab > header .eyebrow{color:var(--accent)}
 .tabs a .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
@@ -305,6 +313,61 @@ footer{font-size:12.5px;color:var(--muted);max-width:86ch;display:grid;gap:4px}
 footer p{margin:0}
 .kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px}
 @media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)} .list{max-height:340px}}
+/* Phones: everything needed to play fits on one screen. The board is sized from the screen
+   height, the panels are reordered so the active controls sit right under the board, and
+   secondary details move below. */
+@media (max-width:700px){
+  body{padding-block:8px 24px}
+  .wrap{gap:10px}
+  .appbar{padding-bottom:6px;min-height:40px}
+  .brand{font-size:18px}
+  .tab{display:flex;flex-direction:column;gap:8px}
+  .tab .main,.tab .boardcol,.tab .panel{display:contents}
+  .tab > header{padding-left:10px;border-left-width:3px}
+  .tab > header .eyebrow,.tab > header p{display:none}
+  .tab > header h1{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .opening{margin-top:4px;font-size:12.5px}
+  .card{padding:10px 12px}
+  .controls{gap:6px} .controls button{height:38px;min-width:0;flex:1;font-size:15px}
+  .board{margin-inline:auto}
+  footer{display:none}
+  /* home */
+  .hero{padding-block:6px 0}
+  .hero h1{font-size:26px}
+  .hero p{font-size:14.5px}
+  .mods{grid-template-columns:1fr;gap:10px}
+  .mod{grid-template-columns:52px minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:12px;row-gap:4px;padding:12px 14px;border-top-width:0;border-left:5px solid var(--c);align-items:center}
+  .mod .mi{grid-row:1/3;width:52px;height:52px}
+  .mod .mi img{width:38px;height:38px}
+  .mod h2{font-size:18px}
+  .mod p{display:none}
+  .mod .mst{grid-column:2/3;font-size:13px;padding:0;background:none;color:var(--muted);min-height:0}
+  .mod .mgo{grid-column:3;grid-row:1/3;font-size:0} .mod .mgo::after{content:"›";font-size:28px;line-height:1}
+  /* play */
+  #tab-spill > header{order:1} #g-clock-top{order:2} #g-board{order:3} #g-clock-bot{order:4} #g-viewbar{order:5}
+  #tab-spill .controls{order:6} #g-game{order:7} #g-setup{order:8}
+  .clock{padding:3px 10px} .clock .ctime{font-size:20px;padding:1px 8px}
+  #g-board{width:min(100%,calc(100dvh - 330px));min-width:240px}
+  #g-game{gap:6px} #g-game .movetext{max-height:3.5em;font-size:13px;padding:4px 8px}
+  #tab-spill.setupmode #g-clock-top,#tab-spill.setupmode #g-board,#tab-spill.setupmode #g-clock-bot,#tab-spill.setupmode #g-viewbar,#tab-spill.setupmode .controls{display:none}
+  #tab-spill.setupmode #g-setup{order:2}
+  #g-setup{gap:8px} .slider .val b{font-size:20px} .tcgrid{grid-template-columns:repeat(4,1fr)} .tcchip{height:32px;font-size:13px} .tcchip.none{grid-column:span 4}
+  #g-new{width:100%}
+  /* puzzles */
+  #tab-notter > header{order:1} #p-board{order:2} #tab-notter .controls{order:3} #p-start{order:4} #p-puzzle{order:5} #p-ratingcard{order:6}
+  #p-board{width:min(100%,calc(100dvh - 300px));min-width:240px}
+  #tab-notter.pickmode #p-board,#tab-notter.pickmode .controls{display:none}
+  #p-ratingcard .big{font-size:30px} #p-ratingcard .spark{height:44px}
+  .levels{grid-template-columns:repeat(2,1fr)}
+  /* analysis */
+  #tab-analyse > header{order:1} #a-progress{order:2} #tab-analyse .boardrow{order:3} #tab-analyse .controls{order:4} #a-card{order:5}
+  #a-summary{order:6} #tab-analyse .list{order:7} #tab-analyse .graphwrap{order:8} #tab-analyse .panel > details{order:9} #a-pick{order:10}
+  #tab-analyse .boardrow{width:min(100%,calc(100dvh - 345px + 26px));min-width:250px;margin-inline:auto}
+  .ahead{gap:8px} .ahead-act{width:100%} .ahead-act .btn{flex:1}
+  #a-card{gap:4px} #a-card .mvname{font-size:18px} #a-card .note{font-size:14px}
+  .summary{grid-template-columns:1fr 1fr}
+}
+@supports not (height:1dvh){@media (max-width:700px){#g-board{width:min(100%,calc(100vh - 330px))} #p-board{width:min(100%,calc(100vh - 300px))} #tab-analyse .boardrow{width:min(100%,calc(100vh - 274px))}}}
 @media (max-width:420px){.boardrow{grid-template-columns:20px minmax(0,1fr);gap:6px} .evalbar .lbl{font-size:8.5px} .controls button{min-width:0;flex:1} .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .promo button{width:52px;height:52px}}
 @media (prefers-reduced-motion:reduce){.evalbar .w,.progress .fill{transition:none}}
 </style>
@@ -313,13 +376,9 @@ footer p{margin:0}
 <body>
 <div class="wrap">
   <div class="appbar">
-    <a class="brand" href="#hjem" aria-label="Sjakkverkstedet – til forsiden"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="3" fill="var(--sq-light)"/><rect x="2" y="2" width="10" height="10" rx="3" fill="var(--sq-dark)"/><rect x="12" y="12" width="10" height="10" rx="3" fill="var(--sq-dark)"/></svg>Sjakkverkstedet</a>
-    <nav class="tabs" aria-label="Seksjoner">
-      <a href="#hjem" data-tab="hjem">Hjem</a>
-      <a href="#analyse" data-tab="analyse"><span class="dot"></span>Analyse</a>
-      <a href="#notter" data-tab="notter"><span class="dot"></span>Sjakknøtter</a>
-      <a href="#spill" data-tab="spill"><span class="dot"></span>Spill mot bot</a>
-    </nav>
+    <span class="brand" id="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="3" fill="var(--sq-light)"/><rect x="2" y="2" width="10" height="10" rx="3" fill="var(--sq-dark)"/><rect x="12" y="12" width="10" height="10" rx="3" fill="var(--sq-dark)"/></svg>Sjakkverkstedet</span>
+    <a class="homebtn" id="homebtn" href="#hjem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-6h3v6h5V9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>Hjem</a>
+    <span class="modname" id="modname"></span>
   </div>
 
   <!-- ============ HJEM ============ -->
@@ -390,7 +449,7 @@ footer p{margin:0}
           <button id="a-prev" aria-label="Forrige trekk">&lt;</button>
           <button id="a-next" aria-label="Neste trekk">&gt;</button>
           <button id="a-last" aria-label="Til slutt">&gt;|</button>
-          <button id="a-flip" class="txt">Snu brettet</button>
+          <button id="a-flip" class="txt" aria-label="Snu brettet">Snu</button>
         </div>
         <div class="graphwrap">
           <div class="cap"><span>Hvit leder ↑</span><span>Klikk for å hoppe til et trekk</span></div>
@@ -2739,7 +2798,7 @@ function pLog(){const el=$("p-log"),L=(P.profile&&P.profile.log)||[]; el.innerHT
   L.slice().reverse().forEach(x=>{const r=document.createElement("div");r.className="plrow";
     r.innerHTML=`<span class="mono"></span><span></span><span class="mono delta ${x.d>=0?"up":"down"}"></span>`;
     r.children[0].textContent=x.r; r.children[1].textContent=x.why; r.children[2].textContent=(x.d>=0?"+":"−")+Math.abs(x.d); el.appendChild(r)})}
-function pStats(){const pr=P.profile; $("p-ratingcard").hidden=$("p-puzzle").hidden=!pr; if(!pr){$("p-rating").textContent="–";["p-solved","p-failed","p-streak"].forEach(i=>$(i).textContent="0");$("p-best").textContent="–";$("p-prating").textContent="–";$("p-log").innerHTML="";$("p-msg").textContent="";$("p-turn").className="turnchip";
+function pStats(){const pr=P.profile; $("p-ratingcard").hidden=$("p-puzzle").hidden=!pr; $("tab-notter").classList.toggle("pickmode",!pr); if(!pr){$("p-rating").textContent="–";["p-solved","p-failed","p-streak"].forEach(i=>$(i).textContent="0");$("p-best").textContent="–";$("p-prating").textContent="–";$("p-log").innerHTML="";$("p-msg").textContent="";$("p-turn").className="turnchip";
   P.board.set({fen:new Chess().fen(),flipped:false,last:null,movable:null,marks:{}});$("p-spark").innerHTML=`<text x="4" y="40" fill="var(--muted)" font-size="12">Utviklingen vises når du har løst noen nøtter</text>`;return}
   $("p-rating").innerHTML=`${pr.rating}${pr.games<10?"<small>?</small>":""}`; $("p-rating").title=pr.games<10?"Foreløpig rating (under 10 nøtter)":"";
   pLog(); $("p-solved").textContent=pr.solved;$("p-failed").textContent=pr.failed;$("p-streak").textContent=pr.streak;$("p-best").textContent=pr.best;
@@ -2874,7 +2933,8 @@ function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=
 Gm.setupOpen=false;
 function gPanels(){ const c=Gm.chess, live=!!(c&&!Gm.over);
   $("g-setup").hidden=live&&!Gm.setupOpen; $("g-game").hidden=!c; $("g-actions").hidden=!live;
-  $("g-setupclose").hidden=!(live&&Gm.setupOpen); $("g-setupwarn").hidden=!(live&&Gm.setupOpen&&c.history().length>0)}
+  $("g-setupclose").hidden=!(live&&Gm.setupOpen); $("g-setupwarn").hidden=!(live&&Gm.setupOpen&&c.history().length>0);
+  $("tab-spill").classList.toggle("setupmode",!c||(live&&Gm.setupOpen))}
 function gMove(from,to,promo){const c=Gm.chess;if(!c||Gm.over||c.turn()!==Gm.color)return;
   if(Gm.clock&&clockLeft(Gm.color)<=0){clockTick();return}
   const m=c.move({from,to,promotion:promo||undefined}); if(!m)return; clockMoved(Gm.color);
@@ -3018,7 +3078,8 @@ $("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); i
    ===================================================================== */
 const TABS=["hjem","analyse","notter","spill"];
 function route(){const t=TABS.includes(location.hash.slice(1))?location.hash.slice(1):"hjem";
-  TABS.forEach(x=>{$("tab-"+x).hidden=x!==t;document.querySelector(`.tabs [data-tab="${x}"]`).setAttribute("aria-current",x===t?"page":"false")});
+  TABS.forEach(x=>{$("tab-"+x).hidden=x!==t}); document.body.dataset.tab=t;
+  $("modname").textContent={analyse:"Analyse",notter:"Sjakknøtter",spill:"Spill mot bot"}[t]||"";
   document.querySelectorAll("#footer [data-for]").forEach(p=>p.hidden=p.dataset.for!==t);
   if(t==="notter") pInit(); if(t==="analyse") sizeBar(); if(t==="hjem") homeRender(); window.scrollTo(0,0)}
 /* Home: one card per module, each with a line about where you left off. */
