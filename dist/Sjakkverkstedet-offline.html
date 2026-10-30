@@ -3026,10 +3026,14 @@ function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=
   $("g-undo").disabled=!c||Gm.resigned||c.history().length<1; $("g-resign").disabled=!c||Gm.over; gStatus(); clockSync(); clockDraw(); tcRender(); gPanels()}
 /* Show the setup card only when it is needed: no game, a finished game, or when asked for. */
 Gm.setupOpen=false;
-function gPanels(){ const c=Gm.chess, live=!!(c&&!Gm.over);
-  $("g-setup").hidden=live&&!Gm.setupOpen; $("g-game").hidden=!c; $("g-actions").hidden=!live;
-  $("g-setupclose").hidden=!(live&&Gm.setupOpen); $("g-setupwarn").hidden=!(live&&Gm.setupOpen&&c.history().length>0);
-  $("tab-spill").classList.toggle("setupmode",!c||(live&&Gm.setupOpen))}
+function gPanels(){ const c=Gm.chess, live=!!(c&&!Gm.over), setup=!c||Gm.setupOpen;
+  $("g-setup").hidden=!setup; $("g-game").hidden=!c||setup; $("g-actions").hidden=!live;
+  $("g-setupclose").hidden=!(c&&Gm.setupOpen); $("g-setupclose").textContent=live?"Tilbake til partiet":"Tilbake";
+  $("g-setupwarn").hidden=!(live&&Gm.setupOpen&&c.history().length>0);
+  $("tab-spill").classList.toggle("setupmode",setup)}
+/* Every "Nytt parti" opens the setup, so strength, colour and time are chosen each time. */
+function gOpenSetup(){ const e=$("g-board").querySelector(".endcard"); if(e) e.remove();
+  Gm.setupOpen=true; gPanels(); $("g-sub").textContent="Velg styrke, farge og tid, og start et parti."; window.scrollTo(0,0); $("g-new").focus({preventScroll:true})}
 function gMove(from,to,promo){const c=Gm.chess;if(!c||Gm.over||c.turn()!==Gm.color)return;
   if(Gm.clock&&clockLeft(Gm.color)<=0){clockTick();return}
   const m=c.move({from,to,promotion:promo||undefined}); if(!m)return; clockMoved(Gm.color);
@@ -3059,7 +3063,7 @@ function gEndCard(title){ const el=$("g-board"); if(el.querySelector(".endcard")
   d.innerHTML=`<b></b><p></p><div class="row"><button class="btn primary small" type="button" data-a="new">Nytt parti</button><button class="btn small" type="button" data-a="an">Analyser partiet</button><button class="btn small" type="button" data-a="x">Lukk</button></div>`;
   d.querySelector("b").textContent=title; d.querySelector("p").textContent=gEndReason();
   d.addEventListener("click",e=>{const a=e.target.dataset&&e.target.dataset.a; if(!a) return; d.remove();
-    if(a==="new") $("g-new").click(); if(a==="an") $("g-analyse").click()});
+    if(a==="new") gOpenSetup(); if(a==="an") $("g-analyse").click()});
   d.addEventListener("pointerdown",e=>e.stopPropagation()); el.appendChild(d)}
 function gUncount(){const r=Gm.lastCounted; if(r&&Gm.record[r]>0) Gm.record[r]--; Gm.lastCounted=null; gRecord(); if(Gm.gameId) Games.remove(Gm.gameId)}
 function gArchive(){ if(!Gm.chess||!gResult()) return; if(!Gm.gameId) Gm.gameId="b_"+Date.now(); Gm.endedAt=Gm.endedAt||Date.now();
@@ -3084,9 +3088,9 @@ async function gLoad(){ gRender(true); const remote=await acctGet("botgame"); co
       Gm.clock=s.clock?{tc:s.clock.tc,w:s.clock.w,b:s.clock.b,inc:s.clock.inc,running:null,since:0,hist:(s.clock.hist||[]).slice()}:null}
     Gm.counted=!!(Gm.chess&&gResult()); if(Gm.counted){await gamesReady; if(!Games.get(Gm.gameId)) gArchive()} gRender(true); gRecord(); gMaybeBot()}catch(e){gRender(true)}}
 $("g-new").onclick=()=>{Gm.resigned=false;Gm.view=null;Gm.setupOpen=false;gNew()};
-$("g-showsetup").onclick=()=>{Gm.setupOpen=true;gPanels();$("g-setup").scrollIntoView({behavior:"smooth",block:"nearest"})};
-$("g-setupclose").onclick=()=>{Gm.setupOpen=false;gPanels()};
-$("g-again").onclick=()=>{const e=$("g-board").querySelector(".endcard"); if(e) e.remove(); $("g-setup").scrollIntoView({behavior:"smooth",block:"nearest"}); $("g-new").focus()};
+$("g-showsetup").onclick=gOpenSetup;
+$("g-setupclose").onclick=()=>{Gm.setupOpen=false;gRender(true)};
+$("g-again").onclick=gOpenSetup;
 $("g-first").onclick=()=>gView(0); $("g-prev").onclick=()=>gView((Gm.view??Gm.chess.history().length)-1);
 $("g-next").onclick=()=>gView((Gm.view??Gm.chess.history().length)+1); $("g-last").onclick=()=>gView(Infinity); $("g-live").onclick=()=>gView(Infinity);
 $("g-moves").addEventListener("click",e=>{const b=e.target.closest(".gm"); if(b) gView(+b.dataset.ply)});
@@ -3174,6 +3178,7 @@ function route(){const t=TABS.includes(location.hash.slice(1))?location.hash.sli
   $("modname").textContent={analyse:"Analyse",notter:"Sjakknøtter",spill:"Spill mot bot"}[t]||"";
   document.querySelectorAll("#footer [data-for]").forEach(p=>p.hidden=p.dataset.for!==t);
   if(t==="notter") pInit();
+  if(t==="spill"&&(!Gm.chess||Gm.over)) gOpenSetup();
   if(t==="analyse"){ if(A.next){const id=A.next; A.next=null; aOpen(id)} else aMode(A.running&&A.mode==="view"?"view":"choose") } if(t==="hjem") homeRender(); window.scrollTo(0,0)}
 /* Home: one card per module, each with a line about where you left off. */
 $("h-ic-pl").src=PIECES.wking; $("h-ic-pz").src=PIECES.wknight; $("h-ic-an").src=PIECES.wqueen;
