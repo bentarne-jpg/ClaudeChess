@@ -136,7 +136,8 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .sq.hint{box-shadow:inset 0 0 0 4px var(--c-great)}
 .sq .pc{position:absolute;inset:0;background-size:88% 88%;background-position:center;background-repeat:no-repeat;z-index:1}
 .board.live .sq.mine .pc{cursor:grab}
-.sq.dragfrom .pc{opacity:.3}
+.sq.dragfrom .pc{opacity:.25}
+.board{-webkit-touch-callout:none}
 .sq .dot{position:absolute;inset:36%;border-radius:50%;background:var(--dot);z-index:2;pointer-events:none}
 .sq .ring{position:absolute;inset:3%;border-radius:50%;border:5px solid var(--dot);z-index:2;pointer-events:none}
 .sq .co{position:absolute;font-size:10px;font-weight:700;font-family:var(--f-mono);opacity:.75;z-index:1;pointer-events:none}
@@ -144,7 +145,8 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .co.r{left:3px;top:1px} .co.f{right:3px;bottom:0}
 .sq .badge{position:absolute;right:-6%;top:-6%;width:44%;height:44%;z-index:3;pointer-events:none}
 .arrows{position:absolute;inset:0;pointer-events:none;z-index:4;width:100%;height:100%}
-.ghost{position:fixed;pointer-events:none;z-index:50;background-size:contain;background-repeat:no-repeat;transform:translate(-50%,-50%)}
+.ghost{position:fixed;pointer-events:none;z-index:50;background-size:88% 88%;background-position:center;background-repeat:no-repeat;transform:translate(-50%,-50%) scale(1.12);filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));will-change:left,top}
+.ghost.settle{transition:left .16s cubic-bezier(.2,.7,.3,1),top .16s cubic-bezier(.2,.7,.3,1),transform .16s,filter .16s;transform:translate(-50%,-50%) scale(1);filter:none}
 .endcard{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:15;width:min(86%,360px);background:var(--surface);color:var(--ink);
   border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 12px 32px rgba(0,0,0,.35);display:grid;gap:8px;text-align:center}
 .endcard b{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:22px}
@@ -2526,7 +2528,7 @@ function Board(el,opts={}){
         const d=Math.abs(from.charCodeAt(0)-to.charCodeAt(0))+Math.abs(+from[1]-+to[1]); if(d<bd){bd=d;best=from}}
       if(best){used.add(best);out.push([best,to])}}
     return out}
-  function animate(pairs){ if(reduce||!pairs.length) return; const ms=Math.min(420,260+pairs.length*40);
+  function animate(pairs){ if(reduce||!pairs.length) return; const ms=Math.min(460,300+pairs.length*40);
     for(const [from,to] of pairs){const a=xyOf(from),b=xyOf(to),pc=sqs[idxOf(to)].querySelector(".pc");
       sqs[idxOf(to)].style.zIndex=5; pc.style.transition="none"; pc.style.transform=`translate(${(a.x-b.x)*100}%,${(a.y-b.y)*100}%)`;
       void pc.offsetWidth; pc.style.transition=`transform ${ms}ms cubic-bezier(.35,.1,.25,1)`; pc.style.transform="translate(0,0)";
@@ -2536,9 +2538,15 @@ function Board(el,opts={}){
     draw(); const after=grid(); prevGrid=after;
     if(fenChanged&&before&&!flipChanged&&o.animate!==false&&!skipAnim) animate(plan(before,after));
     skipAnim=false}
-  function select(s){sel=s; dests=new Chess(st.fen).moves({square:s,verbose:true}).map(m=>m.to); draw()}
+  /* Legal targets for a piece. For the king, castling is also offered on the rook's square. */
+  function targets(s){ const ms=new Chess(st.fen).moves({square:s,verbose:true}); const out=new Set(ms.map(m=>m.to));
+    ms.forEach(m=>{ if(m.flags.includes("k")) out.add("h"+m.from[1]); if(m.flags.includes("q")) out.add("a"+m.from[1]) }); return [...out]}
+  function resolve(from,to){ const ms=new Chess(st.fen).moves({square:from,verbose:true}); if(ms.some(m=>m.to===to)) return to;
+    const c=ms.find(m=>(m.flags.includes("k")&&to==="h"+m.from[1])||(m.flags.includes("q")&&to==="a"+m.from[1])); return c?c.to:null}
+  function select(s){sel=s; dests=targets(s); draw()}
   function canPick(s){const ch=grid()[s]; return st.movable&&ch&&(ch===ch.toUpperCase()?"w":"b")===st.movable&&st.fen.split(" ")[1]===st.movable}
   async function tryMove(from,to){
+    to=resolve(from,to); if(!to) return false;
     const c=new Chess(st.fen); const ms=c.moves({square:from,verbose:true}).filter(m=>m.to===to); if(!ms.length) return false;
     let promo; if(ms.some(m=>m.promotion)){promo=await choosePromo(ms[0].color); if(!promo){sel=null;dests=[];draw();return true}}
     sel=null;dests=[]; draw(); opts.onMove&&opts.onMove(from,to,promo); return true}
@@ -2547,17 +2555,33 @@ function Board(el,opts={}){
       b.style.backgroundImage=`url("${PIECES[color+{q:"queen",r:"rook",b:"bishop",n:"knight"}[p]]}")`;b.onclick=e=>{e.stopPropagation();o.remove();res(p)};box.appendChild(b)});
     o.appendChild(box); o.addEventListener("pointerdown",e=>{if(e.target===o){o.remove();res(null)}}); el.appendChild(o)})}
   const sqAt=(x,y)=>{const e=document.elementFromPoint(x,y);const s=e&&e.closest&&e.closest(".sq");return s&&el.contains(s)?s.dataset.sq:null};
-  el.addEventListener("pointerdown",e=>{ if(!st.movable||e.button>0) return; const s=e.target.closest(".sq"); if(!s) return; const n=s.dataset.sq;
-    if(sel&&dests.includes(n)){e.preventDefault();tryMove(sel,n);return}
-    if(canPick(n)){e.preventDefault(); select(n); drag={from:n,x:e.clientX,y:e.clientY,ghost:null,id:e.pointerId}; try{el.setPointerCapture(e.pointerId)}catch(_){}}
+  const centerOf=sq=>{const r=sqs[idxOf(sq)].getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}};
+  let settling=false;
+  function settle(g,sq,done){ // glide the lifted piece onto a square, then hand over to the board
+    const c=centerOf(sq); if(reduceMotion()){g.remove();done();return}
+    g.classList.add("settle"); requestAnimationFrame(()=>{g.style.left=c.x+"px";g.style.top=c.y+"px"});
+    let fin=false; const end=()=>{if(fin)return;fin=true;g.remove();done()}; g.addEventListener("transitionend",end,{once:true}); setTimeout(end,220)}
+  const reduceMotion=()=>reduce;
+  function lift(d,x,y){ const g=document.createElement("div");g.className="ghost";const sz=el.getBoundingClientRect().width/8;g.style.width=g.style.height=sz+"px";
+    g.style.backgroundImage=sqs[idxOf(d.from)].querySelector(".pc").style.backgroundImage; g.style.left=x+"px"; g.style.top=y+"px";
+    document.body.appendChild(g); d.ghost=g; sqs[idxOf(d.from)].classList.add("dragfrom")}
+  function onMoveP(e){ if(!drag||e.pointerId!==drag.id) return; e.preventDefault();
+    if(!drag.ghost&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>3) lift(drag,e.clientX,e.clientY);
+    if(drag.ghost){drag.ghost.style.left=e.clientX+"px";drag.ghost.style.top=e.clientY+"px"}}
+  function stopListening(){window.removeEventListener("pointermove",onMoveP);window.removeEventListener("pointerup",onUpP);window.removeEventListener("pointercancel",onCancelP)}
+  function onUpP(e){ if(!drag||e.pointerId!==drag.id) return; const d=drag; drag=null; stopListening();
+    if(!d.ghost) return; // a tap: the piece stays selected, tap a target square next
+    const raw=sqAt(e.clientX,e.clientY), to=raw&&raw!==d.from&&dests.includes(raw)?resolve(d.from,raw):null;
+    settling=true;
+    if(to){ settle(d.ghost,to,()=>{ settling=false; sqs.forEach(s=>s.classList.remove("dragfrom")); skipAnim=true; tryMove(d.from,to).then(ok=>{if(!ok){skipAnim=false;draw()}}) }) }
+    else settle(d.ghost,d.from,()=>{ settling=false; sqs.forEach(s=>s.classList.remove("dragfrom")); draw() })}
+  function onCancelP(e){ if(!drag) return; const d=drag; drag=null; stopListening(); if(d.ghost) d.ghost.remove(); sqs.forEach(s=>s.classList.remove("dragfrom")); draw()}
+  el.addEventListener("pointerdown",e=>{ if(!st.movable||e.button>0||settling) return; const s=e.target.closest(".sq"); if(!s) return; const n=s.dataset.sq;
+    if(sel&&dests.includes(n)&&!(canPick(n)&&resolve(sel,n)===null)){e.preventDefault();tryMove(sel,n);return}
+    if(canPick(n)){e.preventDefault(); select(n); drag={from:n,x:e.clientX,y:e.clientY,ghost:null,id:e.pointerId};
+      try{el.releasePointerCapture&&el.hasPointerCapture&&el.hasPointerCapture(e.pointerId)&&el.releasePointerCapture(e.pointerId)}catch(_){}
+      window.addEventListener("pointermove",onMoveP,{passive:false}); window.addEventListener("pointerup",onUpP); window.addEventListener("pointercancel",onCancelP)}
     else{sel=null;dests=[];draw()}});
-  el.addEventListener("pointermove",e=>{ if(!drag) return; if(!drag.ghost&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5){
-      const g=document.createElement("div");g.className="ghost";const sz=el.getBoundingClientRect().width/8;g.style.width=g.style.height=sz+"px";
-      g.style.backgroundImage=sqs[idxOf(drag.from)].querySelector(".pc").style.backgroundImage;document.body.appendChild(g);drag.ghost=g;sqs[idxOf(drag.from)].classList.add("dragfrom")}
-    if(drag.ghost){drag.ghost.style.left=e.clientX+"px";drag.ghost.style.top=e.clientY+"px"}});
-  const endDrag=e=>{ if(!drag) return; const d=drag; drag=null; if(d.ghost){d.ghost.remove();sqs.forEach(s=>s.classList.remove("dragfrom"));
-      const to=sqAt(e.clientX,e.clientY); if(to&&to!==d.from&&dests.includes(to)){skipAnim=true;tryMove(d.from,to)} else draw()}};
-  el.addEventListener("pointerup",endDrag); el.addEventListener("pointercancel",e=>{if(drag&&drag.ghost)drag.ghost.remove();drag=null;sqs.forEach(s=>s.classList.remove("dragfrom"));draw()});
   return {set,get state(){return st},draw,animMs:420};
 }
 
