@@ -1,7 +1,7 @@
 -- Runs on the real Supabase stack in CI (`supabase test db`): migrations, the profile trigger on the
 -- real auth.users, and row-level security with Supabase's own auth.uid() (manifest S3, S5).
 begin;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data)
 values ('11111111-1111-4111-8111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@example.com', '{"full_name":"Alice"}'),
@@ -20,6 +20,8 @@ select throws_ok($$ insert into public.puzzle_attempts (user_id, puzzle_id, puzz
   values ('11111111-1111-4111-8111-111111111111', 'x', 1, true, 1, 1) $$, '42501', null, 'users cannot write puzzle attempts');
 select lives_ok($$ insert into public.user_docs (user_id, name, data) values ('11111111-1111-4111-8111-111111111111', 'botgame', '{}') $$, 'users keep their own documents');
 select throws_ok($$ insert into public.user_docs (user_id, name, data) values ('22222222-2222-4222-8222-222222222222', 'botgame', '{}') $$, '42501', null, 'but not other people''s');
+
+select throws_ok($$ insert into public.moves (game_id, ply, uci, san, fen) values (gen_random_uuid(), 1, 'e2e4', 'e4', 'x') $$, '42501', null, 'users cannot write moves');
 
 reset role;
 set local role anon;

@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 import globals from "globals";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/dist-accounts/**", "coverage/**", "node_modules/**", "apps/web/public/**", "playwright-report/**", "test-results/**", "supabase/functions/_shared/domain/**"] },
+  { ignores: ["**/dist/**", "**/dist-online/**", "**/dist-accounts/**", "coverage/**", "node_modules/**", "apps/web/public/**", "playwright-report/**", "test-results/**", "supabase/functions/_shared/domain/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
@@ -16,7 +16,7 @@ export default tseslint.config(
   },
   {
     // The legacy single-file app being migrated (manifest §12). Kept as-is; new code goes elsewhere.
-    files: ["apps/web/src/legacy/**"],
+    files: ["apps/web/src/legacy/**", "apps/web/src/ui/board.js"],
     languageOptions: { globals: { claude: "readonly" } },
     rules: { "no-unused-vars": "off", "no-empty": "off", "no-cond-assign": "off", "no-useless-escape": "off", "@typescript-eslint/no-unused-vars": "off", "@typescript-eslint/no-unused-expressions": "off" },
   },

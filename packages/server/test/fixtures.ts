@@ -24,7 +24,8 @@ export function fakeClock(start = Date.UTC(2026, 10, 1)) {
 
 export function memoryDeps() {
   const store = memoryStore(), clock = fakeClock(), deleted: string[] = [];
-  const deps: Deps = { store, puzzles, clock, auth: { async deleteUser(id) { deleted.push(id); } } };
+  let code = 0;
+  const deps: Deps = { store, puzzles, clock, auth: { async deleteUser(id) { deleted.push(id); } }, inviteCode: () => `code${String(++code).padStart(6, "0")}` };
   return { deps, store, clock, deleted };
 }
 

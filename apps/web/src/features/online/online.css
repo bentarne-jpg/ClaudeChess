@@ -1,0 +1,25 @@
+:root{--m-fr:#7a5bb5}
+.mod.fr{--c:var(--m-fr)}
+#tab-venn{display:grid;gap:14px;max-width:980px}
+#tab-venn .card{padding:14px 16px}
+#tab-venn h1{font:800 26px var(--f-display);font-stretch:112%;margin:0}
+.ol-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ol-chips button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 12px;font:600 14px var(--f-mono);cursor:pointer}
+.ol-chips button[aria-pressed="true"]{background:var(--m-fr);border-color:var(--m-fr);color:#fff}
+.ol-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ol-link{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.ol-game{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:18px;align-items:start}
+.ol-side{display:grid;gap:10px}
+.ol-player{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-weight:600}
+.ol-player .t{font:700 22px var(--f-mono);padding:2px 10px;border-radius:6px;background:var(--bg)}
+.ol-player.on .t{background:var(--m-fr);color:#fff}
+.ol-player.low .t{background:var(--err,#c0392b);color:#fff}
+.ol-status{font-weight:700}
+.ol-moves{font:13.5px/1.8 var(--f-mono);max-height:220px;overflow:auto}
+.ol-list{display:grid;gap:6px}
+.ol-list a{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--ink);background:var(--surface)}
+@media (max-width:700px){
+  .ol-game{grid-template-columns:1fr;gap:8px}
+  #tab-venn .board{width:min(100%,calc(100dvh - 300px));margin-inline:auto}
+  .ol-player{padding:4px 8px} .ol-player .t{font-size:18px}
+}

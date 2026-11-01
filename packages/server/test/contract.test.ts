@@ -63,4 +63,28 @@ describe.each(stores)("repositories (%s)", (_name, make) => {
       expect((ex.games as unknown[]).length).toBe(1);
     });
   });
+
+  it("updates person-vs-person games and keeps their moves in order", async () => {
+    const clock = { tc: { m: 1, i: 0 }, w: 60000, b: 60000, inc: 0, running: null, since: 0, hist: [{ w: 60000, b: 60000 }] };
+    const id = await store.tx((r) => r.games.insert({
+      kind: "pvp", status: "open", rated: true, timeControl: { m: 1, i: 0 }, pool: "bullet", whiteId: ALICE, blackId: null, botRating: null,
+      createdBy: ALICE, clientId: null, startFen: "start", result: null, reason: null, pgn: null, startedAt: null, endedAt: null,
+      inviteCode: "abcdefghij", creatorColor: "w", fen: "start", ply: 0, clock: null, drawOffer: null,
+    }));
+    await store.tx(async (r) => {
+      expect((await r.games.byCode("abcdefghij"))?.id).toBe(id);
+      await r.games.update(id, { status: "active", blackId: BOB, inviteCode: null, clock: clock as never });
+      await r.moves.add({ gameId: id, ply: 2, uci: "e7e5", san: "e5", fen: "f2", whiteMs: 1, blackMs: 2, createdAt: new Date(2) });
+      await r.moves.add({ gameId: id, ply: 1, uci: "e2e4", san: "e4", fen: "f1", whiteMs: 1, blackMs: 2, createdAt: new Date(1) });
+    });
+    await expect(store.tx((r) => r.games.update(id, { kind: "bot" } as never))).rejects.toThrow();
+    await store.tx(async (r) => {
+      const g = await r.games.get(id, true);
+      expect(g).toMatchObject({ status: "active", blackId: BOB, inviteCode: null, clock: { w: 60000 } });
+      expect((await r.moves.list(id)).map((m) => m.san)).toEqual(["e4", "e5"]);
+      const a = await r.games.activeFor(ALICE);
+      expect(a).toMatchObject([{ id, status: "active", you: "w" }]);
+      expect(await r.games.byCode("abcdefghij")).toBeNull();
+    });
+  });
 });
