@@ -40,10 +40,15 @@ Every provider asks for a *callback URL*; it is `https://<project-ref>.supabase.
 ## 4. Tell GitHub about the projects
 
 In the repository: **Settings → Environments**.
-- Create `supabase-staging` and `supabase-production`. In each, add secrets
-  `SUPABASE_ACCESS_TOKEN` (from supabase.com → Account → Access Tokens) and `SUPABASE_DB_PASSWORD`,
-  and the variable `SUPABASE_PROJECT_REF`. Protect `supabase-production` with yourself as required
-  reviewer.
+- Create `supabase-staging` and `supabase-production`. In each, add:
+  - secret `SUPABASE_ACCESS_TOKEN`: supabase.com → Account → Access Tokens → a token scoped to that
+    one project with **Edge Functions: Read-write** and **Edge Function Secrets: Read-write** (nothing else);
+  - secret `SUPABASE_DB_PASSWORD`: the project's database password;
+  - variable `SUPABASE_PROJECT_REF`: the project id;
+  - variable `SUPABASE_POOLER_HOST`: from the project's **Connect → Connection string → Session pooler**,
+    the host part, e.g. `aws-1-eu-central-1.pooler.supabase.com`.
+
+  Protect `supabase-production` with yourself as required reviewer.
 
 In **Settings → Secrets and variables → Actions → Variables**, add:
 
