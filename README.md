@@ -15,6 +15,9 @@ with one card per module:
 
 The interface is in Norwegian.
 
+All changes follow the architecture manifest in [`ARCHITECTURE.md`](ARCHITECTURE.md); decisions are
+recorded in [`docs/adr/`](docs/adr/).
+
 ## Running it
 
 The app is static files. Serve the `app/` folder with any web server, for example:
