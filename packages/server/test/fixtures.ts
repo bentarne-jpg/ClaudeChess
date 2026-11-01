@@ -38,7 +38,7 @@ export async function freshDatabase(): Promise<{ sql: postgres.Sql; url: string;
   const u = new URL(url); u.pathname = `/${name}`;
   const sql = postgres(u.toString(), { max: 4, onnotice: () => {} });
   const root = resolve(import.meta.dirname, "../../../supabase");
-  await sql.unsafe(readFileSync(`${root}/tests/auth_stub.sql`, "utf8"));
+  await sql.unsafe(readFileSync(resolve(import.meta.dirname, "auth_stub.sql"), "utf8"));
   for (const f of readdirSync(`${root}/migrations`).sort()) await sql.unsafe(readFileSync(`${root}/migrations/${f}`, "utf8"));
   await sql.unsafe("grant all on all tables in schema public to service_role; grant usage on all sequences in schema public to service_role;");
   for (const id of [ALICE, BOB]) await sql`insert into auth.users (id, raw_user_meta_data) values (${id}, ${sql.json({ full_name: id === ALICE ? "Alice" : "Bob" })})`;
