@@ -505,14 +505,16 @@ function gStatus(){const c=Gm.chess; if(!c){$("g-status").textContent="Ingen par
     else if(Gm.flag) s=Gm.flagDraw?"Tiden gikk ut – remis":Gm.flag===Gm.color?"Tiden din gikk ut – boten vant":"Botens tid gikk ut – du vant!";
     else if(c.in_checkmate()) s=(t===Gm.color)?"Sjakkmatt – boten vant":"Sjakkmatt – du vant!";
     else if(c.in_stalemate()) s="Patt – remis"; else if(c.in_threefold_repetition()) s="Tre gangers gjentakelse – remis"; else if(c.insufficient_material()) s="For lite materiale – remis"; else s="Remis";
-    $("g-status").textContent=s; $("g-after").hidden=false; gCount(); gEndCard(s); return}
+    $("g-status").textContent="Partiet er ferdig · "+s; $("g-after").hidden=false; gCount(); gEndCard(s); return}
   $("g-status").textContent=Gm.thinking?"Boten tenker …":t===Gm.color?(c.in_check()?"Sjakk! Din tur":"Din tur"):"Botens tur"}
 /* Reviewing: Gm.view is the ply being looked at, or null for the live position.
    Looking back never changes the game, and the clocks keep running. */
 Gm.view=null;
 function gViewFen(ply){const t=new Chess(); const h=Gm.chess.history(); for(let i=0;i<ply;i++) t.move(h[i]); return {fen:t.fen(),last:ply?t.history({verbose:true})[ply-1]:null}}
 function gView(ply){ const c=Gm.chess; if(!c) return; const n=c.history().length; ply=Math.max(0,Math.min(n,ply));
-  const prev=Gm.view===null?n:Gm.view; Gm.view=ply>=n?null:ply; gRender(Math.abs(prev-ply)!==1)}
+  const prev=Gm.view===null?n:Gm.view; Gm.view=ply>=n?null:ply;
+  const card=$("g-board").querySelector(".endcard"); if(card) card.remove(); // browsing the moves closes the end-of-game card
+  gRender(Math.abs(prev-ply)!==1)}
 function gRender(noAnim){const c=Gm.chess; Gm.over=!!(c&&gResult()); const hist=c?c.history({verbose:true}):[]; const n=hist.length;
   if(Gm.view!==null&&(!c||Gm.view>=n)) Gm.view=null;
   const live=Gm.view===null; const shown=live?{fen:c?c.fen():new Chess().fen(),last:hist[n-1]}:gViewFen(Gm.view);
@@ -563,6 +565,8 @@ function gEndReason(){const c=Gm.chess,t=c.turn(),side=t==="w"?"Hvit":"Svart";
   if(c.insufficient_material()) return "Ingen av sidene har nok brikker igjen til å sette matt.";
   return "Partiet ble remis etter 50-trekksregelen."}
 function gEndCard(title){ const el=$("g-board"); if(el.querySelector(".endcard")) return;
+  // Shown once when the game ends; browsing the moves afterwards keeps the result in the status line instead.
+  const key=(Gm.gameId||"")+":"+Gm.chess.history().length; if(Gm.endShown===key||Gm.view!==null) return; Gm.endShown=key;
   const c=Gm.chess; if(c.in_stalemate()||c.in_checkmate()){const g=c.board();let k=null;g.forEach((row,r)=>row.forEach((x,f)=>{if(x&&x.type==="k"&&x.color===c.turn())k="abcdefgh"[f]+(8-r)}));
     if(k) Gm.board.set({marks:{[k]:"mated"}})}
   const d=document.createElement("div"); d.className="endcard"; d.setAttribute("role","status");
