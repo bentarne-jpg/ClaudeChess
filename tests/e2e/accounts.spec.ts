@@ -16,12 +16,14 @@ function signedIn() {
 /** Fake Supabase: REST tables, the api function, and a record of what the app sent. */
 async function mockSupabase(page: Page) {
   const calls: { route: string; body: any }[] = [];
+  const rest: { table: string; method: string; body: any }[] = [];
   let puzzle: any = null;
   const json = (r: Route, body: unknown, status = 200) => r.fulfill({ status, contentType: "application/json", body: JSON.stringify(body), headers: { "access-control-allow-origin": "*" } });
   await page.route(`${SB}/**`, async (r) => {
     const url = new URL(r.request().url());
     if (r.request().method() === "OPTIONS") return r.fulfill({ status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" } });
-    if (url.pathname === "/rest/v1/profiles") return json(r, r.request().method() === "GET" ? { display_name: "Bent Arne" } : []);
+    if (url.pathname.startsWith("/rest/v1/") && r.request().method() !== "GET") rest.push({ table: url.pathname.slice(9), method: r.request().method(), body: r.request().postDataJSON() });
+    if (url.pathname === "/rest/v1/profiles") return json(r, r.request().method() === "GET" ? { display_name: "Bent Arne", avatar: null, created_at: "2026-11-01T10:00:00Z" } : []);
     if (url.pathname === "/rest/v1/ratings") return json(r, [{ pool: "puzzle", rating: 1234, games: 5 }]);
     if (url.pathname === "/rest/v1/user_docs") return json(r, r.request().method() === "GET" ? [] : null, r.request().method() === "GET" ? 200 : 201);
     if (url.pathname.startsWith("/functions/v1/api/")) {
@@ -34,13 +36,25 @@ async function mockSupabase(page: Page) {
       if (route === "puzzle/result") { puzzle = prof(puzzle.rating + 7, puzzle.games + 1); return json(r, { profile: puzzle, delta: 7, rated: true }); }
       if (route === "bot-game/finish") return json(r, { gameId: "g1", result: "0-1", rated: true, rating: { pool: "bot", before: 1500, after: 1488 } });
       if (route === "account/export") return json(r, { ratings: [] });
+      if (route === "account/stats") return json(r, {
+        ratings: [{ pool: "puzzle", rating: 1234, best: 1250, games: 5, wins: 4, losses: 1, draws: 0 }, { pool: "blitz", rating: 1530, best: 1530, games: 2, wins: 1, losses: 0, draws: 1 }],
+        puzzles: { attempts: 5, solved: 4, failed: 1, points: [{ t: Date.UTC(2026, 9, 20), r: 1200 }, { t: Date.UTC(2026, 9, 30), r: 1234 }] },
+        games: { total: 3, wins: 2, draws: 1, losses: 0, bot: 1, pvp: 2, points: [{ t: Date.UTC(2026, 9, 25), r: 1500, pool: "blitz" }, { t: Date.UTC(2026, 9, 31), r: 1530, pool: "blitz" }] },
+        weeks: Array.from({ length: 12 }, (_, i) => ({ week: `2026-W${34 + i}`, start: 0, puzzles: i % 3, solved: i % 2, games: i % 2, wins: 0 })) });
       return json(r, { error: "not-found" }, 404);
     }
     if (url.pathname.startsWith("/auth/v1/logout")) return json(r, {}, 204);
     return json(r, {});
   });
-  return calls;
+  return Object.assign(calls, { rest });
 }
+
+test("signed out: the profile page asks you to log in", async ({ page }) => {
+  await mockSupabase(page);
+  await open(page, "profil");
+  await expect(page.locator("#tab-profil h1")).toHaveText("Min profil");
+  await expect(page.locator("#tab-profil")).toContainText("Logg inn for å se profilen din");
+});
 
 test("signed out: the login dialog offers Google, Facebook and Vipps", async ({ page }) => {
   await mockSupabase(page);
@@ -53,19 +67,50 @@ test("signed out: the login dialog offers Google, Facebook and Vipps", async ({ 
   await page.waitForURL(/supabase\.test\/auth\/v1\/authorize\?provider=google/);
 });
 
-test("signed in: name in the bar, ratings and data download in the dialog", async ({ page }) => {
+test("signed in: the name in the bar leads to the profile with ratings, charts and account actions", async ({ page }) => {
   await mockSupabase(page);
   await open(page, "hjem", signedIn);
-  await expect(page.locator("#acct-btn")).toHaveText("Bent Arne");
+  await expect(page.locator("#acct-btn")).toHaveText("BBent Arne");
   await page.click("#acct-btn");
-  await expect(page.locator("#acct-dlg .ratings")).toContainText("Sjakknøtter");
-  await expect(page.locator("#acct-dlg .ratings")).toContainText("1234");
+  await expect(page).toHaveURL(/#profil$/);
+  await expect(page.locator("#pf-name")).toHaveText("Bent Arne");
+  await expect(page.locator("#pf-ratings")).toContainText("Sjakknøtter");
+  await expect(page.locator("#pf-ratings")).toContainText("1234");
+  await expect(page.locator("#pf-ratings")).toContainText("Lynsjakk");
+  await expect(page.locator("#pf-dev svg path")).toHaveCount(2);
+  await expect(page.locator("#pf-activity svg rect").first()).toBeVisible();
+  await expect(page.locator("#pf-activity")).toContainText("80 %");
   const dl = page.waitForEvent("download");
-  await page.locator("#acct-dlg button", { hasText: "Last ned mine data" }).click();
+  await page.locator("#tab-profil button", { hasText: "Last ned mine data" }).click();
   expect((await dl).suggestedFilename()).toBe("sjakkverkstedet-mine-data.json");
-  await page.locator("#acct-dlg button", { hasText: "Slett kontoen" }).click();
-  await page.click("#acct-del-go");
-  await expect(page.locator("#acct-dlg .msg")).toHaveText("Skriv SLETT for å bekrefte.");
+  await page.click("#pf-delete");
+  await page.click("#pf-del-go");
+  await expect(page.locator("#pf-msg")).toHaveText("Skriv SLETT for å bekrefte.");
+});
+
+test("signed in: change name and pick a profile picture", async ({ page }) => {
+  const calls = await mockSupabase(page);
+  await open(page, "profil", signedIn);
+  await page.fill("#pf-name-input", "  Bent  ");
+  await page.click("#pf-save-name");
+  await expect(page.locator("#pf-name")).toHaveText("Bent");
+  await page.locator("#pf-pieces button").nth(2).click();      // white rook
+  await page.locator("#pf-colours button").nth(1).click();     // blue
+  await page.click("#pf-save-avatar");
+  await expect(page.locator("#pf-msg")).toHaveText("Profilbildet er lagret.");
+  expect(calls.rest.filter((x) => x.table === "profiles").map((x) => x.body)).toEqual([{ display_name: "Bent" }, { avatar: "piece:wr:blue" }]);
+  await expect(page.locator("#acct-btn img")).toBeVisible();
+});
+
+test("first login: activity saved in the browser by older versions is moved to the account and removed locally", async ({ page }) => {
+  const calls = await mockSupabase(page);
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem("seeded")) return; sessionStorage.setItem("seeded", "1");
+    localStorage.setItem("mine-partier", JSON.stringify([{ kind: "game", id: "b_old", source: "bot", color: "w", result: "1-0", ended: 1, pgn: "1. e4 e5 2. Qh5 Nc6 3. Bc4 Nf6 4. Qxf7# 1-0" }]));
+  });
+  await open(page, "analyse", signedIn);
+  await expect.poll(() => calls.rest.filter((x) => x.table === "user_docs").map((x) => x.body.name)).toContain("b_old");
+  expect(await page.evaluate(() => localStorage.getItem("mine-partier"))).toBeNull();
 });
 
 test("signed in: puzzle results go to the server, which owns the rating", async ({ page }) => {

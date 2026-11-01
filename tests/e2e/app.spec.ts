@@ -93,3 +93,21 @@ test("the privacy page is linked from the footer and loads under its own strict 
   await expect(page.locator('a.mod[href="#analyse"]')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("without a login nothing is kept: a finished game and the puzzle rating are gone after reload", async ({ page }) => {
+  const errors = await open(page, "spill");
+  await page.click('.seg [data-color="w"]');
+  await page.click("#g-new");
+  await move(page, "g-board", "e2e4");
+  await expect.poll(() => page.evaluate(() => (window as any).__sjakk.Gm.chess.history().length), { timeout: 15_000 }).toBe(2);
+  await page.click("#g-resign"); await page.click("#g-yes");
+  await expect(page.locator("#a-games .grow")).toHaveCount(2); // the game is listed during the visit …
+  await page.goto("./?engine=fake&test#analyse"); await page.reload();
+  await expect(page.locator("#a-games .grow")).toHaveCount(1); // … and gone after a reload; only the built-in example
+  const keys = await page.evaluate(() => Object.keys(localStorage));
+  expect(keys.filter((k) => /mine-partier|spill-mot-bot|sjakknotter-profil|valgt-parti|pgn-analyse/.test(k))).toEqual([]);
+  await page.goto("./?engine=fake&test#notter");
+  await page.click('#p-start [data-level="1200"]');
+  await expect(page.locator("#p-store")).toContainText("ikke logget inn");
+  expect(errors).toEqual([]);
+});

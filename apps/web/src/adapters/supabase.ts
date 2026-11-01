@@ -44,13 +44,18 @@ export function supabaseProfiles(sb: SupabaseClient): ProfilePort {
   return {
     async get(userId) {
       const [{ data: p }, { data: r }] = await Promise.all([
-        sb.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
+        sb.from("profiles").select("display_name, avatar, created_at").eq("id", userId).maybeSingle(),
         sb.from("ratings").select("pool, rating, games").eq("user_id", userId),
       ]);
-      return { displayName: p?.display_name ?? "Spiller", ratings: (r ?? []).map((x) => ({ pool: x.pool, rating: Math.round(x.rating), games: x.games })) };
+      return { displayName: p?.display_name ?? "Spiller", avatar: p?.avatar ?? null, memberSince: p?.created_at ?? null,
+        ratings: (r ?? []).map((x) => ({ pool: x.pool, rating: Math.round(x.rating), games: x.games })) };
     },
     async rename(userId, name) {
       const { error } = await sb.from("profiles").update({ display_name: name }).eq("id", userId);
+      if (error) throw error;
+    },
+    async setAvatar(userId, avatar) {
+      const { error } = await sb.from("profiles").update({ avatar }).eq("id", userId);
       if (error) throw error;
     },
   };

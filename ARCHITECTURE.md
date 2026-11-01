@@ -141,7 +141,9 @@ Changing a "decided" row requires an amendment ([§11](#11-amending-this-manifes
 ## 5. Data and storage rules
 
 - **D1** PostgreSQL is the source of truth for users, ratings, games, moves, puzzle attempts and
-  analyses. Browser storage is a cache and MUST NOT be trusted by the server.
+  analyses. Activity (ratings, games, puzzle history, a game in progress) MUST NOT be stored in the
+  browser: signed out, it lives in memory for the visit only; signed in, it lives on the account.
+  Only harmless preferences (e.g. analysis depth) may be kept in browser storage (ADR-0005).
 - **D2** Schema changes MUST be made through versioned migrations that are forward-only and
   tested. Destructive migrations (dropping or rewriting data) need a separate, explicitly approved
   pull request with a backup step.
@@ -151,7 +153,7 @@ Changing a "decided" row requires an amendment ([§11](#11-amending-this-manifes
 - **D5** Moves are stored as UCI with ply number and the clock time remaining; PGN is generated,
   not the primary record.
 - **D6** Data from the earlier browser-only version is imported once per user on first login, then
-  owned by the server.
+  removed from the browser and owned by the server.
 
 Initial tables: `users`, `ratings`, `games`, `game_players`, `moves`, `puzzle_attempts`,
 `analyses`. New tables follow the same rules.
@@ -256,6 +258,8 @@ after it is accepted; a later ADR supersedes it.
 | 0001 | Adopt this architecture manifest and layered TypeScript monorepo | accepted |
 | 0002 | Supabase as backend platform | accepted |
 | 0003 | Login with Google, Facebook and Vipps | accepted |
+| 0004 | Release channels, kept versions and rollback | accepted |
+| 0005 | Nothing is saved without a login | accepted |
 
 ## 11. Amending this manifest
 

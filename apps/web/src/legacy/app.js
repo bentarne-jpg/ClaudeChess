@@ -18,7 +18,17 @@ const $=id=>document.getElementById(id);
   if(vp&&!/maximum-scale/.test(vp.content)) vp.content+=",maximum-scale=1,user-scalable=no";
 })();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const store={get(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+/* Storage policy (owner decision, ADR-0005): activity (ratings, games, puzzle history, a game in progress)
+   is only kept on the account. Without a login everything lives in memory for this visit and is gone
+   on reload. Only harmless preferences stay in the browser. Data saved by older versions is imported
+   once on the first login and then removed from the browser (adoptOldLocalData). */
+const PREF_KEYS=new Set(["analyse-dybde"]);
+const OLD_ACTIVITY_KEYS=["sjakknotter-profil","spill-mot-bot","mine-partier","valgt-parti","pgn-analyse-siste"];
+const MEM=new Map();
+const store={
+  get(k){ if(PREF_KEYS.has(k)){try{return JSON.parse(localStorage.getItem(k)||"null")}catch(e){return null}} return MEM.has(k)?JSON.parse(MEM.get(k)):null },
+  set(k,v){ if(PREF_KEYS.has(k)){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} return} MEM.set(k,JSON.stringify(v===undefined?null:v)) }};
+function adoptOldLocalData(){ for(const k of OLD_ACTIVITY_KEYS){ try{ const v=localStorage.getItem(k); if(v!=null){ MEM.set(k,v); localStorage.removeItem(k) } }catch(e){} } }
 
 /* =====================================================================
    OPENINGS
@@ -274,11 +284,11 @@ const ratingChange=D.puzzleRatingChange, freshProfile=D.freshPuzzleProfile;
    so ratings follow the account across sessions and devices. Browser storage is a backup. */
 const Acct={db:null,uid:null,ready:null};
 Acct.ready=(async()=>{ try{ if(OFF) return false;
-    const sb=await legacyAccountStore(); if(sb){Acct.db=sb.db; Acct.uid=sb.uid; return true}
+    const sb=await legacyAccountStore(); if(sb){Acct.db=sb.db; Acct.uid=sb.uid; adoptOldLocalData(); return true}
     if(!(window.claude&&claude.use)) return false;
     const to=new Promise(r=>setTimeout(()=>r([null,null]),12000));
     const [db,user]=await Promise.race([Promise.all([claude.use("db"),claude.use("user")]),to]);
-    if(!db||!user) return false; const id=await user.id(); if(!id) return false; Acct.db=db; Acct.uid=id; return true}catch(e){return false}})();
+    if(!db||!user) return false; const id=await user.id(); if(!id) return false; Acct.db=db; Acct.uid=id; adoptOldLocalData(); return true}catch(e){return false}})();
 async function acctGet(name){ if(!await Acct.ready) return undefined;
   for(let i=0;i<3;i++){try{const s=await withTimeout(Acct.db.doc(`data/users/${Acct.uid}/${name}`).get(),8000);return s.exists?JSON.parse(JSON.stringify(s.data())):null}catch(e){if(i===2)return undefined;await sleep(800*(i+1))}}}
 const acctQ={}, acctRetry={};
@@ -302,8 +312,9 @@ async function pInitStorage(){ const remote=await acctGet("puzzleprofile"); P.db
   P.remoteOk=remote!==undefined; return best}
 async function pSave(){P.profile.updated=Date.now(); const p=JSON.parse(JSON.stringify(P.profile)); store.set(STORE_P,p);
   const ok=await acctSet("puzzleprofile",p); pStoreNote(ok)}
-function pStoreNote(ok){$("p-store").textContent=OFF?"Offline-versjon: ratingen lagres i denne nettleseren på denne maskinen.":ok?"Ratingen er lagret på kontoen din og huskes neste gang du åpner appen, også på andre enheter."
-  :"Ratingen er lagret i denne nettleseren, men kom ikke fram til kontoen din. Appen prøver igjen automatisk."}
+function pStoreNote(ok){$("p-store").textContent=!Acct.db?(OFF?"Offline-versjon: ratingen gjelder bare nå og lagres ikke.":"Du er ikke logget inn, så ratingen gjelder bare nå og lagres ikke. Logg inn for å ta vare på den.")
+  :ok?"Ratingen er lagret på kontoen din og huskes neste gang du åpner appen, også på andre enheter."
+  :"Ratingen kom ikke fram til kontoen din. Appen prøver igjen automatisk."}
 let pInitDone=false;
 async function pInit(){ if(pInitDone) return; pInitDone=true;
   $("p-status").textContent="Laster nøtter …";
@@ -647,7 +658,7 @@ const Games={list:[],
       const H=parsed.headers; const mine=/^(du|bentarne|bent arne)$/i;
       this.put({id,source:"pgn",pgn:text,ended:Date.now(),result:H.Result||"*",color:mine.test(H.Black||"")?"b":mine.test(H.White||"")?"w":null})} return id},
   remember(id){store.set(STORE_SEL,id)},
-  async load(){ const local=store.get(STORE_GL)||[]; const remote=await acctList(); const byId={};
+  async load(){ const remote=await acctList(); const local=store.get(STORE_GL)||[]; const byId={};
     for(const g of local) byId[g.id]=g;
     if(remote) for(const g of remote){const l=byId[g.id]; if(!l||(g.updated||0)>=(l.updated||0)) byId[g.id]=g}
     this.list=Object.values(byId);
@@ -691,10 +702,10 @@ $("a-games").addEventListener("keydown",e=>{const r=e.target.closest(".grow"); i
 /* =====================================================================
    ROUTER + KEYS
    ===================================================================== */
-const TABS=["hjem","analyse","notter","spill","venn"];
+const TABS=["hjem","analyse","notter","spill","venn","profil"];
 function route(){const seg=location.hash.slice(1).split("/"); const t=TABS.includes(seg[0])?seg[0]:"hjem";
   TABS.forEach(x=>{$("tab-"+x).hidden=x!==t}); document.body.dataset.tab=t;
-  $("modname").textContent={analyse:"Analyse",notter:"Sjakknøtter",spill:"Spill mot bot",venn:"Spill mot venn"}[t]||"";
+  $("modname").textContent={analyse:"Analyse",notter:"Sjakknøtter",spill:"Spill mot bot",venn:"Spill mot venn",profil:"Min profil"}[t]||"";
   window.dispatchEvent(new CustomEvent("sjakk:route",{detail:{tab:t,args:seg.slice(1)}}));
   document.querySelectorAll("#footer [data-for]").forEach(p=>p.hidden=p.dataset.for!==t);
   if(t==="notter") pInit();

@@ -10,13 +10,16 @@ import "./legacy/app.js";
 import { accountContext } from "./composition.ts";
 import { mountAccount } from "./features/account/account-ui.ts";
 import { mountOnline } from "./features/online/online-ui.ts";
+import { mountProfile } from "./features/profile/profile-ui.ts";
 
 accountContext().then(({ config, account, online, live }) => {
   // Back to the invitation the person was opening when they logged in.
   const back = account?.resumeAfterLogin();
   if (back && location.hash !== back) location.hash = back;
   const slot = document.getElementById("acct-slot");
-  if (slot) mountAccount(slot, config, account);
+  const bar = slot ? mountAccount(slot, config, account) : null;
+  const profil = document.getElementById("tab-profil");
+  if (profil) mountProfile(profil, account, (name, avatar) => bar?.showMe(name, avatar));
   const venn = document.getElementById("tab-venn");
   if (venn) mountOnline(venn, { online, live, enabled: !!config.supabase && !!account, signIn: () => document.getElementById("acct-btn")?.click() });
 });
