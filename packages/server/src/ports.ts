@@ -21,12 +21,18 @@ export interface GameRow {
 export interface MoveRow { gameId: string; ply: number; uci: string; san: string; fen: string; whiteMs: number | null; blackMs: number | null; createdAt: Date }
 export interface GamePlayer { gameId: string; userId: string | null; color: "w" | "b"; ratingBefore: number | null; ratingAfter: number | null }
 
+export interface FinishedGame {
+  endedAt: Date; kind: "bot" | "pvp"; pool: Pool | null; result: "1-0" | "0-1" | "1/2-1/2"; color: "w" | "b";
+  ratingBefore: number | null; ratingAfter: number | null;
+}
+
 /** Repositories available inside one transaction. */
 export interface Repos {
   ratings: {
     get(userId: string, pool: Pool): Promise<RatingRow | null>;
     put(row: RatingRow): Promise<void>;
     remove(userId: string, pool: Pool): Promise<void>;
+    list(userId: string): Promise<RatingRow[]>;
   };
   puzzleAttempts: {
     has(userId: string, puzzleId: string): Promise<boolean>;
@@ -53,6 +59,10 @@ export interface Repos {
   moves: {
     add(m: MoveRow): Promise<void>;
     list(gameId: string): Promise<MoveRow[]>;
+  };
+  history: {
+    /** The user's finished games, oldest first, with their colour and rating change when rated. */
+    gamesFor(userId: string): Promise<FinishedGame[]>;
   };
   account: {
     /** Everything stored about the user, for "download my data" (S11). */

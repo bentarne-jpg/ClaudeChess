@@ -3,6 +3,14 @@
  * the Supabase adapter implements them, tests use fakes.
  */
 import type { Body, PuzzleProfile, Route } from "@sjakk/contracts";
+
+/** Profile statistics as the server computes them (packages/server/src/stats.ts). */
+export interface Stats {
+  ratings: { pool: string; rating: number; best: number; games: number; wins: number; losses: number; draws: number }[];
+  puzzles: { attempts: number; solved: number; failed: number; points: { t: number; r: number }[] };
+  games: { total: number; wins: number; draws: number; losses: number; bot: number; pvp: number; points: { t: number; r: number; pool: string }[] };
+  weeks: { week: string; start: number; puzzles: number; solved: number; games: number; wins: number }[];
+}
 import type { Provider } from "./config.ts";
 
 export interface Session { userId: string; email: string | null }
@@ -13,10 +21,17 @@ export interface AuthPort {
 }
 export class ApiCallError extends Error { constructor(public status: number, public code: string) { super(code); } }
 export interface ApiPort { call<R extends Route>(route: R, body: Body<R>): Promise<unknown> }
+export interface Overview { displayName: string; avatar: string | null; memberSince: string | null; ratings: { pool: string; rating: number; games: number }[] }
 export interface ProfilePort {
-  get(userId: string): Promise<{ displayName: string; ratings: { pool: string; rating: number; games: number }[] }>;
+  get(userId: string): Promise<Overview>;
   rename(userId: string, name: string): Promise<void>;
+  setAvatar(userId: string, avatar: string | null): Promise<void>;
 }
+
+/** Avatars the app offers: a piece in white or black on one of six backgrounds. */
+export const AVATAR_PIECES = ["wk", "wq", "wr", "wb", "wn", "wp", "bk", "bq", "br", "bb", "bn", "bp"] as const;
+export const AVATAR_COLOURS = ["green", "blue", "amber", "violet", "red", "slate"] as const;
+export const isAvatar = (a: string | null): boolean => a === null || /^piece:[wb][pnbrqk]:(green|blue|amber|violet|red|slate)$/.test(a);
 
 /** Small key-value memory that survives the login redirect (sessionStorage in the browser). */
 export interface MemoPort { get(key: string): string | null; set(key: string, value: string): void; remove(key: string): void }
@@ -37,8 +52,10 @@ export interface Account {
   puzzleResult(b: Body<"puzzle/result">): Promise<{ profile: PuzzleProfile; delta: number; rated: boolean }>;
   importPuzzleProfile(p: Body<"account/import">["puzzle"]): Promise<PuzzleProfile | null>;
   finishBotGame(b: Body<"bot-game/finish">): Promise<{ gameId: string; result: string; rated: boolean; rating: { before: number; after: number } | null } | null>;
-  overview(): Promise<{ displayName: string; ratings: { pool: string; rating: number; games: number }[] }>;
+  overview(): Promise<Overview>;
   rename(name: string): Promise<void>;
+  setAvatar(avatar: string | null): Promise<void>;
+  stats(): Promise<Stats>;
   exportData(): Promise<unknown>;
   deleteAccount(): Promise<void>;
 }
@@ -77,6 +94,8 @@ export async function createAccount(ports: {
     },
     overview: () => profiles.get(need().userId),
     rename: (name) => profiles.rename(need().userId, name.trim().slice(0, 40) || "Spiller"),
+    async setAvatar(avatar) { if (!isAvatar(avatar)) throw new ApiCallError(400, "bad-request"); await profiles.setAvatar(need().userId, avatar); },
+    async stats() { need(); return (await api.call("account/stats", {})) as Stats; },
     async exportData() { need(); return api.call("account/export", {}); },
     async deleteAccount() { need(); await api.call("account/delete", { confirm: "SLETT" }); await auth.signOut(); location.reload(); },
   };

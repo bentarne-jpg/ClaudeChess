@@ -54,6 +54,12 @@ describe.skipIf(!db)("row-level security", () => {
     expect(bobSees).toEqual([]);
   });
 
+  it("lets users pick one of the app's avatars, nothing else", async () => {
+    await as(sql, ALICE, (t) => t`update public.profiles set avatar = 'piece:wn:green' where id = ${ALICE}`);
+    await expect(as(sql, ALICE, (t) => t`update public.profiles set avatar = 'https://evil.example/x.png' where id = ${ALICE}`)).rejects.toThrow(/check constraint/);
+    await expect(as(sql, ALICE, (t) => t`update public.profiles set created_at = now() where id = ${ALICE}`)).rejects.toThrow(/permission denied/);
+  });
+
   it("lets users rename themselves only", async () => {
     await as(sql, ALICE, (t) => t`update public.profiles set display_name = 'Ali' where id = ${ALICE}`);
     await as(sql, ALICE, (t) => t`update public.profiles set display_name = 'Hacked' where id = ${BOB}`);

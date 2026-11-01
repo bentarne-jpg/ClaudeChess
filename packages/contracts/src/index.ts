@@ -83,6 +83,7 @@ export const ROUTES = {
   "account/import": ImportLocal,
   "account/export": Empty,
   "account/delete": DeleteAccount,
+  "account/stats": Empty,
   "pvp/create": PvpCreate,
   "pvp/info": PvpCode,
   "pvp/accept": PvpCode,

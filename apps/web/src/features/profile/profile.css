@@ -1,0 +1,30 @@
+#tab-profil{display:grid;gap:14px;max-width:980px}
+#tab-profil .card{padding:16px}
+#tab-profil h1{font:800 26px var(--f-display);font-stretch:112%;margin:0}
+#tab-profil h2{font:800 18px var(--f-display);font-stretch:112%;margin:0 0 8px}
+.pf-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.pf-head .who{display:grid;gap:4px;min-width:0;flex:1}
+.pf-head .since{color:var(--muted);font-size:14px}
+.pf-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pf-row input{height:38px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 10px;font:15px var(--f-body);min-width:0;flex:1 1 180px;max-width:320px}
+.avatar{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font:800 16px var(--f-display);flex:none;overflow:hidden}
+.avatar img{width:78%;height:78%}
+.pf-pieces,.pf-colours{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.pf-pieces button,.pf-colours button{border:2px solid transparent;background:none;padding:2px;border-radius:50%;cursor:pointer}
+.pf-pieces button[aria-pressed="true"],.pf-colours button[aria-pressed="true"]{border-color:var(--accent)}
+.pf-colours button span{display:block;width:26px;height:26px;border-radius:50%}
+.pf-ratings{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.pf-rating{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.pf-rating .n{font:800 26px var(--f-mono);font-variant-numeric:tabular-nums}
+.pf-rating .l{font-weight:700}
+.pf-rating .s{color:var(--muted);font-size:13px}
+.pf-totals{display:flex;flex-wrap:wrap;gap:16px;font-size:14px;color:var(--muted);margin-top:6px}
+.pf-totals b{color:var(--ink);font-variant-numeric:tabular-nums}
+.pf-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.pf-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.chart{width:100%;height:auto;display:block}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .axis{fill:var(--muted);font:11px var(--f-mono)}
+.pf-empty{color:var(--muted)}
+.pf-danger{color:var(--err,#c0392b)}
+@media (max-width:700px){ #tab-profil h1{font-size:22px} }

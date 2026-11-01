@@ -38,6 +38,7 @@ export function repos(sql: Sql): Repos {
             wins = excluded.wins, losses = excluded.losses, streak = excluded.streak, best = excluded.best, imported = excluded.imported, updated_at = now()`;
       },
       async remove(u, p) { await sql`delete from public.ratings where user_id = ${u} and pool = ${p}`; },
+      async list(u) { return (await sql`select * from public.ratings where user_id = ${u} order by pool`).map(toRating); },
     },
     puzzleAttempts: {
       async has(u, id) { const [r] = await sql`select 1 from public.puzzle_attempts where user_id = ${u} and puzzle_id = ${id}`; return !!r; },
@@ -107,6 +108,18 @@ export function repos(sql: Sql): Repos {
         return (await sql`select * from public.moves where game_id = ${id} order by ply`).map((r) => ({
           gameId: r.game_id, ply: r.ply, uci: r.uci, san: r.san, fen: r.fen, whiteMs: r.white_ms, blackMs: r.black_ms, createdAt: r.created_at,
         }));
+      },
+    },
+    history: {
+      async gamesFor(u) {
+        const rows = await sql`select g.ended_at, g.kind, g.pool, g.result,
+            case when g.white_id = ${u} then 'w' else 'b' end as color, p.rating_before, p.rating_after
+          from public.games g
+          left join public.game_players p on p.game_id = g.id and p.color = case when g.white_id = ${u} then 'w' else 'b' end
+          where g.status = 'finished' and g.result is not null and ${u} in (g.white_id, g.black_id)
+          order by g.ended_at, g.created_at`;
+        return rows.map((r) => ({ endedAt: r.ended_at, kind: r.kind, pool: r.pool, result: r.result, color: r.color,
+          ratingBefore: r.rating_before, ratingAfter: r.rating_after }));
       },
     },
     account: {

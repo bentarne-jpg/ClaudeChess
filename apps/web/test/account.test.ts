@@ -17,7 +17,7 @@ function setup(session: { userId: string; email: null } | null, reply: (route: s
   const location = { href: "https://x/app/?a=1" + hash, hash, reload: vi.fn() };
   const store = new Map<string, string>();
   const memo = { get: (k: string) => store.get(k) ?? null, set: (k: string, v: string) => void store.set(k, v), remove: (k: string) => void store.delete(k) };
-  const profiles = { get: vi.fn(async () => ({ displayName: "A", ratings: [] })), rename: vi.fn(async () => {}) };
+  const profiles = { get: vi.fn(async () => ({ displayName: "A", avatar: null, memberSince: null, ratings: [] })), rename: vi.fn(async () => {}), setAvatar: vi.fn(async () => {}) };
   return { auth, api, location, profiles, memo, store };
 }
 
@@ -44,6 +44,13 @@ describe("returning after login", () => {
 });
 
 describe("account", () => {
+  it("accepts only the app's own avatars", async () => {
+    const p = setup({ userId: "u", email: null }); const a = await createAccount(p);
+    await a.setAvatar("piece:wn:green");
+    await a.setAvatar(null);
+    await expect(a.setAvatar("https://evil.example/x.png")).rejects.toBeInstanceOf(ApiCallError);
+    expect(p.profiles.setAvatar).toHaveBeenCalledTimes(2);
+  });
   it("returns to the home page after login", async () => {
     const p = setup(null); const a = await createAccount(p);
     await a.signIn("google");

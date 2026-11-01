@@ -11,6 +11,7 @@ export function memoryStore(): Store & { state: State } {
       async get(u, p) { const r = st.ratings.find((x) => x.userId === u && x.pool === p); return r ? { ...r } : null; },
       async put(row) { st.ratings = st.ratings.filter((x) => !(x.userId === row.userId && x.pool === row.pool)).concat({ ...row }); },
       async remove(u, p) { st.ratings = st.ratings.filter((x) => !(x.userId === u && x.pool === p)); },
+      async list(u) { return st.ratings.filter((x) => x.userId === u).map((x) => ({ ...x })); },
     },
     puzzleAttempts: {
       async has(u, id) { return st.attempts.some((a) => a.userId === u && a.puzzleId === id); },
@@ -53,6 +54,17 @@ export function memoryStore(): Store & { state: State } {
         st.moves.push({ ...m });
       },
       async list(id) { return st.moves.filter((m) => m.gameId === id).sort((a, b) => a.ply - b.ply); },
+    },
+    history: {
+      async gamesFor(u) {
+        return st.games.filter((g) => g.status === "finished" && g.result && (g.whiteId === u || g.blackId === u))
+          .sort((a, b) => (a.endedAt?.getTime() ?? 0) - (b.endedAt?.getTime() ?? 0))
+          .map((g) => {
+            const color = g.whiteId === u ? "w" as const : "b" as const;
+            const p = st.players.find((x) => x.gameId === g.id && x.color === color);
+            return { endedAt: g.endedAt!, kind: g.kind, pool: g.pool, result: g.result!, color, ratingBefore: p?.ratingBefore ?? null, ratingAfter: p?.ratingAfter ?? null };
+          });
+      },
     },
     account: {
       async exportAll(u) {

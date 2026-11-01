@@ -87,4 +87,14 @@ describe.each(stores)("repositories (%s)", (_name, make) => {
       expect(await r.games.byCode("abcdefghij")).toBeNull();
     });
   });
+
+  it("lists ratings and the finished-game history with the player's colour", async () => {
+    await store.tx(async (r) => {
+      const all = await r.ratings.list(ALICE);
+      expect(all.map((x) => x.pool)).toContain("puzzle");
+      const h = await r.history.gamesFor(ALICE);
+      expect(h[0]).toMatchObject({ kind: "bot", color: "w", result: "1-0", ratingBefore: 1500, ratingAfter: 1600 });
+      expect(await r.history.gamesFor(BOB)).toEqual([]);
+    });
+  });
 });
