@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 import globals from "globals";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "node_modules/**", "apps/web/public/**", "playwright-report/**", "test-results/**", "supabase/functions/_shared/domain/**"] },
+  { ignores: ["**/dist/**", "**/dist-accounts/**", "coverage/**", "node_modules/**", "apps/web/public/**", "playwright-report/**", "test-results/**", "supabase/functions/_shared/domain/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },

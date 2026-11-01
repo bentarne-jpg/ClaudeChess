@@ -19,7 +19,9 @@
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.0.5",
+    "deno": "^2.9.6",
     "dependency-cruiser": "^18.7.0",
     "eslint": "^9.39.5",
     "globals": "^17.13.0",

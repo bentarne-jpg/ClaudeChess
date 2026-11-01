@@ -1,0 +1,3 @@
+{ "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "emitDeclarationOnly": true, "noEmit": false, "outDir": "../../node_modules/.tsbuild/contracts", "types": [] },
+  "include": ["src"] }

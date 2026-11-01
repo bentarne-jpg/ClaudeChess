@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "@sjakk/domain": "../_shared/domain/index.ts",
+    "@sjakk/contracts": "../_shared/contracts/index.ts",
+    "@sjakk/server": "../_shared/server/index.ts",
+    "@sjakk/server/postgres": "../_shared/server/postgres.ts",
+    "chess.js": "npm:chess.js@0.10.3",
+    "zod": "npm:zod@3.25.76",
+    "postgres": "npm:postgres@3.4.7"
+  }
+}
