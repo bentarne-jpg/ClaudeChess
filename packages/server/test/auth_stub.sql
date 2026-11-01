@@ -1,9 +1,15 @@
 -- A minimal stand-in for Supabase's auth schema and roles, so migrations and row-level security
 -- can be tested on plain Postgres (CI runs the same tests on the real Supabase stack too).
-do $$ begin
-  if not exists (select from pg_roles where rolname = 'anon') then create role anon nologin; end if;
-  if not exists (select from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
-  if not exists (select from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+do $$
+declare r text;
+begin
+  -- Roles are shared by the whole cluster and test files run in parallel, so tolerate a race.
+  foreach r in array array['anon', 'authenticated', 'service_role'] loop
+    begin
+      execute format('create role %I nologin%s', r, case when r = 'service_role' then ' bypassrls' else '' end);
+    exception when duplicate_object or unique_violation then null;
+    end;
+  end loop;
 end $$;
 create schema if not exists auth;
 create table if not exists auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb);
