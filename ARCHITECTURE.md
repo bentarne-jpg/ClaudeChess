@@ -56,10 +56,11 @@ apps/
     src/adapters/  api client, engine worker, local cache
     src/features/  analysis/ puzzles/ play/ bot/ profile/ home/  (UI per feature)
     src/ui/        shared UI components (board, eval bar, clock, buttons)
-  server/
-    src/app/       use cases and ports
-    src/adapters/  postgres repositories, auth verifier, websocket gateway, http routes, clock
-    migrations/    versioned database migrations
+supabase/
+  migrations/      versioned database migrations, including row-level security policies
+  functions/       Edge Functions (Deno): the server-side use cases (finish game, make move, …)
+    _shared/       server application layer and ports; the domain package is bundled in at build time
+  tests/           database tests (policies, functions) run against real Postgres
 tests/e2e/         Playwright end-to-end tests
 ```
 
@@ -93,17 +94,20 @@ tests/e2e/         Playwright end-to-end tests
 | Frontend build | Vite, plain DOM or a light component library, no heavy framework required | decided |
 | Chess rules | chess.js wrapped in `packages/domain` | decided |
 | Engine | Stockfish (WASM) in a Web Worker, behind an `Engine` port | decided |
-| Server | Node.js + Fastify + WebSocket | decided |
-| Database | PostgreSQL with versioned migrations | decided |
-| Hosting and login provider | Supabase *or* Azure (Entra External ID) | **open – ADR-0002** |
-| Login methods | e.g. Google, Apple, email link, Vipps | **open – ADR-0003** |
-| Rating system | Glicko-2, separate pool per time control, puzzles and bot games | decided |
+| Backend platform | Supabase: Postgres, Auth, Realtime, Edge Functions (ADR-0002) | decided |
+| Server-side logic | Supabase Edge Functions (Deno, TypeScript), sharing `packages/domain` | decided |
+| Database | Supabase Postgres with versioned migrations and row-level security | decided |
+| Realtime | Supabase Realtime (database changes and broadcast) for live games | decided |
+| Login | Supabase Auth with hosted providers: Google, Facebook, Vipps as custom OIDC `custom:vipps` (ADR-0003) | decided |
+| Frontend hosting | GitHub Pages (static) | decided |
+| Rating system | Glicko-2 per pool for games (bullet, blitz, rapid, classical, bot); puzzles keep the asymmetric rule the owner chose (a solve gains about twice what a miss loses) | decided |
 
 Changing a "decided" row requires an amendment ([§11](#11-amending-this-manifest)).
 
 ## 4. Security rules
 
-- **S1** Passwords MUST NOT be stored or handled by this app. Login uses an external OIDC provider.
+- **S1** Passwords MUST NOT be stored or handled by this app. Login uses hosted providers through
+  Supabase Auth (OAuth/OIDC with PKCE).
 - **S2** The server MUST verify the identity token on every authenticated request and WebSocket
   connection. Identity is never taken from client-supplied fields.
 - **S3** Every read and write MUST be authorised on the server (row-level security or repository
@@ -112,7 +116,11 @@ Changing a "decided" row requires an amendment ([§11](#11-amending-this-manifes
 - **S4** In person-vs-person games the server MUST validate every move, keep the clocks on server
   time, and decide the result. In bot games the server MUST at least verify that the submitted
   game is legal before it counts for rating.
-- **S5** Ratings MUST only be computed on the server.
+- **S5** Ratings MUST only be computed on the server. Tables holding ratings, results and moves
+  MUST NOT be writable by the `anon` or `authenticated` roles; only Edge Functions (service role)
+  and `security definer` database functions write them.
+- **S5a** The Supabase service-role key MUST only exist in Edge Functions and CI secrets, never in
+  the web app. The web app uses only the public anon key.
 - **S6** All input MUST be validated against its schema (A6) and size-limited (for example PGN
   length, message size). Rate limits MUST apply to the API, login and move submission.
 - **S7** Text from users or storage MUST be inserted into the page with `textContent` or an
@@ -184,8 +192,11 @@ Initial tables: `users`, `ratings`, `games`, `game_players`, `moves`, `puzzle_at
 - **E1** All changes go through a branch and a pull request. Nothing is pushed directly to `main`.
 - **E2** CI runs on every pull request: typecheck, lint, boundary rules (A7), all tests, build. A
   red pipeline blocks merging.
-- **E3** Merging to `main` deploys to staging; production is deployed from a tagged release.
-- **E4** Database migrations run automatically in staging and as an explicit step in production.
+- **E3** Merging to `main` deploys the web app to GitHub Pages. Database migrations and Edge
+  Functions are deployed by a separate, manually started workflow (or on a tagged release), so a
+  web deploy never changes the database by surprise.
+- **E4** CI runs the full Supabase stack locally (`supabase start`) for database and API tests. A
+  separate staging project SHOULD be added before person-vs-person play is opened to others.
 - **E5** Generated files (for example the offline build) are produced in CI and published as
   release assets, not committed.
 
@@ -225,8 +236,8 @@ after it is accepted; a later ADR supersedes it.
 | ADR | Title | Status |
 |---|---|---|
 | 0001 | Adopt this architecture manifest and layered TypeScript monorepo | accepted |
-| 0002 | Hosting and login provider (Supabase vs Azure) | open |
-| 0003 | Login methods offered to users | open |
+| 0002 | Supabase as backend platform | accepted |
+| 0003 | Login with Google, Facebook and Vipps | accepted |
 
 ## 11. Amending this manifest
 
