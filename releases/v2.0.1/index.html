@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Sjakkverkstedet</title>
+  <script type="module" crossorigin src="./assets/index-DQWCYdUH.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BMDrakXo.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="appbar">
+    <span class="brand" id="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="3" fill="var(--sq-light)"/><rect x="2" y="2" width="10" height="10" rx="3" fill="var(--sq-dark)"/><rect x="12" y="12" width="10" height="10" rx="3" fill="var(--sq-dark)"/></svg>Sjakkverkstedet</span>
+    <a class="homebtn" id="homebtn" href="#hjem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h5v-6h3v6h5V9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>Hjem</a>
+    <span class="modname" id="modname"></span>
+    <span class="acct" id="acct-slot"></span>
+  </div>
+
+  <section class="tab" id="tab-venn" hidden></section>
+
+  <!-- ============ HJEM ============ -->
+  <section class="tab" id="tab-hjem" hidden>
+    <div class="hero">
+      <h1>Velkommen til Sjakkverkstedet</h1>
+      <p>Velg hva du vil gjøre. Alt kjører i nettleseren din, med Stockfish som motor.</p>
+    </div>
+    <nav class="mods" aria-label="Moduler">
+      <a class="mod pl" href="#spill"><span class="mi"><img id="h-ic-pl" alt=""></span><h2>Spill mot bot</h2><p>Spill mot Stockfish med valgfri styrke og klokke.</p><span class="mst" id="h-st-pl">…</span><span class="mgo">Spill →</span></a>
+      <a class="mod pz" href="#notter"><span class="mi"><img id="h-ic-pz" alt=""></span><h2>Sjakknøtter</h2><p>Finn det beste trekket. Nøttene følger nivået ditt.</p><span class="mst" id="h-st-pz">…</span><span class="mgo">Løs nøtter →</span></a>
+      <a class="mod fr" href="#venn" id="h-venn" hidden><span class="mi"><img id="h-ic-fr" alt=""></span><h2>Spill mot venn</h2><p>Send en lenke og spill et ratet parti med klokke.</p><span class="mst" id="h-st-fr">Krever innlogging</span><span class="mgo">Utfordre →</span></a>
+      <a class="mod an" href="#analyse"><span class="mi"><img id="h-ic-an" alt=""></span><h2>Analyse</h2><p>Se hvert trekk vurdert, fra dine partier eller en PGN.</p><span class="mst" id="h-st-an">…</span><span class="mgo">Analyser →</span></a>
+    </nav>
+  </section>
+
+  <!-- ============ ANALYSE ============ -->
+  <section class="tab" id="tab-analyse" hidden>
+    <!-- Step 1: choose what to analyse -->
+    <div class="astep" id="a-choose">
+      <header>
+        <p class="eyebrow">Analyse</p>
+        <h1>Hva vil du analysere?</h1>
+        <p>Velg et av partiene dine, eller lim inn en PGN. Analysen starter med en gang.</p>
+      </header>
+      <button class="card resume" id="a-resume" type="button" hidden><span class="rl">Fortsett</span><b id="a-resumetitle"></b><span class="hint" id="a-resumesub"></span><span class="chevr">›</span></button>
+      <div class="depthrow">
+        <span class="hint">Dybde</span>
+        <div class="seg" id="a-depthseg" role="group" aria-label="Analysedybde">
+          <button type="button" data-depth="12" aria-pressed="false">Rask</button>
+          <button type="button" data-depth="16" aria-pressed="true">Normal</button>
+          <button type="button" data-depth="20" aria-pressed="false">Grundig</button>
+        </div>
+        <span class="hint" id="a-depthhint"></span>
+      </div>
+      <section class="card games" aria-label="Mine siste partier">
+        <div class="games-head"><h2>Mine siste partier</h2><span class="hint" id="a-gcount"></span></div>
+        <div class="glist" id="a-games" role="list"></div>
+      </section>
+      <details class="card fold" id="a-intake">
+        <summary><h2>Lim inn PGN</h2><span class="chev" data-closed="Vis"></span></summary>
+        <div class="fbody">
+          <label for="a-pgn" class="hint">På chess.com: <b>Del</b> → <b>PGN</b> → Kopier. Kommentarer, klokketider og varianter blir ignorert.</label>
+          <textarea id="a-pgn" spellcheck="false" placeholder='[White "Navn"]
+[Black "Navn"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 …'></textarea>
+          <div class="row">
+            <button class="btn primary" id="a-go" type="button">Analyser</button>
+            <label class="btn filebtn" for="a-file">Åpne .pgn-fil<input type="file" id="a-file" accept=".pgn,.txt,text/plain"></label>
+          </div>
+          <p class="msg" id="a-msg" role="status"></p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Step 2: the analysis -->
+    <div class="astep" id="a-view" hidden>
+      <header class="ahead">
+        <div class="ahead-text">
+          <p class="eyebrow" id="a-eyebrow">Analyse</p>
+          <h1 id="a-title"></h1>
+          <p id="a-sub"></p>
+          <div class="opening" id="a-opening" hidden><span class="eco"></span><span></span></div>
+        </div>
+        <div class="ahead-act">
+          <button class="btn" id="a-new" type="button">Ny analyse</button>
+          <button class="btn" id="a-analyze" type="button" hidden>Analyser grundigere</button>
+        </div>
+      </header>
+    <div class="progress" id="a-progress" hidden>
+      <div class="track"><div class="fill" id="a-pfill"></div></div>
+      <div class="txt"><span id="a-ptxt">Laster sjakkmotoren …</span><button class="btn small" id="a-stop" type="button">Stopp</button></div>
+    </div>
+    <section class="main">
+      <div class="boardcol">
+        <div class="boardrow">
+          <div class="evalbar" id="a-evalbar" aria-label="Evalueringsbar">
+            <div class="w" id="a-evalw"></div><div class="mid"></div>
+            <div class="lbl top" id="a-lbltop"></div><div class="lbl bot" id="a-lblbot"></div>
+          </div>
+          <div class="board" id="a-board" role="img" aria-label="Sjakkbrett"></div>
+        </div>
+        <div class="controls" id="a-nav">
+          <button id="a-first" aria-label="Til start">|&lt;</button>
+          <button id="a-prev" aria-label="Forrige trekk">&lt;</button>
+          <button id="a-next" aria-label="Neste trekk">&gt;</button>
+          <button id="a-last" aria-label="Til slutt">&gt;|</button>
+          <button id="a-flip" class="txt" aria-label="Snu brettet">Snu</button>
+        </div>
+        <div class="controls" id="a-jumps">
+          <button id="a-preverr" class="txt">‹ Forrige</button>
+          <button id="a-nexterr" class="txt">Neste feil ›</button>
+          <button id="a-try" class="txt">Prøv egne trekk</button>
+        </div>
+        <div class="exbar" id="a-exbar" hidden><span id="a-extxt"></span><button class="btn small primary" id="a-exback" type="button">Tilbake til analysen</button></div>
+        <div class="graphwrap">
+          <div class="cap"><span>Hvit leder ↑</span><span>Klikk for å hoppe til et trekk</span></div>
+          <svg class="graph" id="a-graph" tabindex="0" aria-label="Evalueringsgraf"></svg>
+        </div>
+      </div>
+      <div class="panel">
+        <section class="summary" id="a-summary" aria-label="Oppsummering"></section>
+        <div class="card mcard" id="a-card" aria-live="polite"></div>
+        <div class="list"><table><tbody id="a-tbody"></tbody></table></div>
+        <details class="mini"><summary>Hva betyr merkene?</summary><div class="legend" id="a-legend"></div></details>
+      </div>
+    </section>
+    </div>
+  </section>
+
+  <!-- ============ NØTTER ============ -->
+  <section class="tab" id="tab-notter" hidden>
+    <header>
+      <p class="eyebrow">Sjakknøtter</p>
+      <h1>Finn det beste trekket</h1>
+      <p>Løser du nøttene, blir de gradvis vanskeligere.</p>
+    </header>
+    <section class="main">
+      <div class="boardcol">
+        <div class="board" id="p-board" role="img" aria-label="Sjakkbrett for nøtter"></div>
+        <div class="controls">
+          <button id="p-hint" class="txt">Hint</button>
+          <button id="p-solution" class="txt">Vis løsning</button>
+          <button id="p-next" class="txt">Neste nøtt</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="card" id="p-start" hidden>
+          <h2>Hvor sterk er du?</h2>
+          <p class="hint">Velg et startnivå. Ratingen justeres automatisk etter hver nøtt.</p>
+          <div class="levels">
+            <button class="btn" data-level="800">Nybegynner<small>start 800</small></button>
+            <button class="btn" data-level="1200">Hobbyspiller<small>start 1200</small></button>
+            <button class="btn" data-level="1600">Klubbspiller<small>start 1600</small></button>
+            <button class="btn" data-level="2000">Sterk<small>start 2000</small></button>
+          </div>
+        </div>
+        <div class="card" id="p-puzzle">
+          <div class="row" style="justify-content:space-between">
+            <div class="pstatus"><span class="turnchip" id="p-turn"></span><span id="p-status">Laster nøtter …</span></div>
+            <span class="prating" id="p-prating" title="Nøttens rating">–</span>
+          </div>
+          <p class="msg" id="p-msg" role="status"></p>
+        </div>
+        <div class="card" id="p-ratingcard">
+          <div class="rating">
+            <div><p class="eyebrow">Din nøtterating</p><div class="big" id="p-rating">–</div></div>
+            <div class="delta" id="p-delta"></div>
+            <button class="btn small" id="p-statsbtn" type="button" aria-expanded="false">Statistikk</button>
+          </div>
+          <svg class="spark" id="p-spark" aria-label="Ratingutvikling"></svg>
+          <div class="stats">
+            <div class="stat"><b id="p-solved">0</b><span>Løst</span></div>
+            <div class="stat"><b id="p-failed">0</b><span>Ikke løst</span></div>
+            <div class="stat"><b id="p-streak">0</b><span>På rad</span></div>
+            <div class="stat"><b id="p-best">–</b><span>Beste rating</span></div>
+          </div>
+          <details class="mini"><summary>Siste nøtter</summary><div class="plog" id="p-log"></div></details>
+          <details class="mini"><summary>Slik regnes ratingen</summary>
+            <p class="hint">Løser du en nøtt, går ratingen opp. Bommer du, går den ned med omtrent halvparten så mye. En vanskelig nøtt gir mer når du løser den, og en lett nøtt koster mer når du bommer. Hint og «Vis løsning» teller som bom.</p>
+            <p class="hint" id="p-store"></p>
+            <div class="confirm" id="p-resetrow"><button class="btn small" id="p-reset" type="button">Nullstill rating</button></div>
+          </details>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============ SPILL ============ -->
+  <section class="tab" id="tab-spill" hidden>
+    <header>
+      <p class="eyebrow">Spill mot bot</p>
+      <h1 id="g-title">Stockfish</h1>
+      <p id="g-sub">Velg styrke og farge, og start et parti.</p>
+      <div class="opening" id="g-opening" hidden><span class="eco"></span><span></span></div>
+    </header>
+    <section class="main">
+      <div class="boardcol">
+        <div class="clock" id="g-clock-top" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
+        <div class="gboardrow" id="g-boardrow">
+          <div class="evalbar gbar" id="g-evalbar" aria-label="Hvem som ligger best an" hidden>
+            <div class="w" id="g-evalw"></div><div class="mid"></div>
+            <div class="lbl top" id="g-lbltop"></div><div class="lbl bot" id="g-lblbot"></div>
+          </div>
+          <div class="board" id="g-board" role="img" aria-label="Sjakkbrett for parti mot bot"></div>
+        </div>
+        <div class="clock" id="g-clock-bot" hidden><span class="cname"></span><span class="ctime mono">0:00</span></div>
+        <div class="controls">
+          <button id="g-first" aria-label="Til start">|&lt;</button>
+          <button id="g-prev" aria-label="Forrige trekk">&lt;</button>
+          <button id="g-next" aria-label="Neste trekk">&gt;</button>
+          <button id="g-last" aria-label="Til siste trekk">&gt;|</button>
+          <button id="g-flip" class="txt" aria-label="Snu brettet">Snu</button>
+        </div>
+        <div class="viewbar idle" id="g-viewbar" aria-live="polite"><span id="g-viewtxt"></span><button class="btn small primary" id="g-live" type="button" tabindex="-1">Tilbake til partiet</button></div>
+      </div>
+      <div class="panel">
+        <div class="card" id="g-setup">
+          <div class="row" style="justify-content:space-between"><h2>Nytt parti</h2><button class="btn small" id="g-setupclose" type="button" hidden>Tilbake til partiet</button></div>
+          <p class="msg err" id="g-setupwarn" hidden>Partiet som pågår, avsluttes uten resultat når du starter et nytt.</p>
+          <div class="slider">
+            <div class="val"><label for="g-rating">Botens styrke</label><b id="g-ratingval">1500</b></div>
+            <input type="range" id="g-rating" min="600" max="2800" step="100" value="1500">
+            <p class="hint" id="g-ratingdesc"></p>
+          </div>
+          <div class="row">
+            <span class="hint">Du spiller</span>
+            <div class="seg" role="group" aria-label="Farge">
+              <button type="button" data-color="w" aria-pressed="true">Hvit</button>
+              <button type="button" data-color="b" aria-pressed="false">Svart</button>
+              <button type="button" data-color="r" aria-pressed="false">Tilfeldig</button>
+            </div>
+          </div>
+          <div class="assist">
+            <div class="val"><span class="hint">Hjelp under partiet</span></div>
+            <div class="seg" id="g-assist" role="group" aria-label="Hjelp under partiet">
+              <button type="button" data-assist="0" aria-pressed="true">Ingen</button>
+              <button type="button" data-assist="1" aria-pressed="false">Stilling</button>
+              <button type="button" data-assist="2" aria-pressed="false">Stilling + hint</button>
+            </div>
+            <p class="hint" id="g-assistdesc"></p>
+          </div>
+          <div class="tc">
+            <div class="val"><span class="hint">Tid</span><b class="mono" id="g-tcval">Ingen klokke</b></div>
+            <div class="tcgrid" id="g-tcs" role="group" aria-label="Tidskontroll"></div>
+            <details class="tccustom" id="g-tccustom">
+              <summary>Egen tid</summary>
+              <div class="row">
+                <label class="sel" for="g-tcmin">Minutter <input type="text" id="g-tcmin" value="5" inputmode="decimal" autocomplete="off" spellcheck="false"></label>
+                <label class="sel" for="g-tcinc">+ sekunder per trekk <input type="text" id="g-tcinc" value="10" inputmode="numeric" autocomplete="off" spellcheck="false"></label>
+              </div>
+              <div class="row"><button class="btn small primary" id="g-tcuse" type="button">Bruk</button><button class="btn small" id="g-tcsave" type="button">Bruk og lagre som valg</button></div>
+              <p class="msg" id="g-tcmsg" role="status"></p>
+            </details>
+          </div>
+          <div class="row"><button class="btn primary" id="g-new" type="button">Start nytt parti</button></div>
+          <p class="hint" id="g-record"></p>
+        </div>
+        <div class="card" id="g-game">
+          <div class="pstatus"><span class="turnchip" id="g-turn"></span><span id="g-status">Ingen parti i gang</span></div>
+          <p class="msg" id="g-msg" role="status"></p>
+          <pre class="movetext" id="g-moves"></pre>
+          <div class="row" id="g-actions"><button class="btn small" id="g-undo" type="button">Angre trekk</button><button class="btn small" id="g-hint" type="button" hidden>Hint</button><button class="btn small" id="g-resign" type="button">Gi opp</button><button class="btn small" id="g-showsetup" type="button">Nytt parti</button></div>
+          <div class="row" id="g-after" hidden><button class="btn primary" id="g-analyse" type="button">Analyser partiet</button><button class="btn" id="g-again" type="button">Nytt parti</button></div>
+          <div class="confirm" id="g-confirm" hidden><span>Vil du gi opp partiet?</span><button class="btn small" id="g-yes" type="button">Ja, gi opp</button><button class="btn small" id="g-no" type="button">Fortsett</button></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <footer id="footer">
+    <p data-for="analyse">I analysen: bla med <span class="kbd">←</span> og <span class="kbd">→</span>, klikk på et trekk eller i grafen, eller hopp mellom feilene. Flytt en brikke for å prøve egne trekk fra stillingen; <span class="kbd">Esc</span> tar deg tilbake.</p>
+    <p data-for="notter">Nøttene kommer fra Lichess' åpne nøttedatabase (CC0): 24 595 nøtter fra 400 til 3166 i rating. Ratingen din er foreløpig, merket med «?», de første 10 nøttene.</p>
+    <p data-for="spill">Bla i partiet med <span class="kbd">←</span> og <span class="kbd">→</span> eller ved å klikke på et trekk. Det endrer ikke partiet, og klokken går videre. Botens styrke er omtrentlig.</p>
+    <p>Sjakkmotor: Stockfish 10 (GPL), som kjører i nettleseren din. Åpninger og nøtter fra Lichess (CC0). Brikker: cburnett. <a href="personvern.html" id="privacy-link">Personvern</a></p>
+  </footer>
+</div>
+
+</body>
+</html>
