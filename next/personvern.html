@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<title>Personvern – Sjakkverkstedet</title>
+<style>
+  :root{--bg:#eef0ea;--surface:#fafbf8;--ink:#1d2421;--muted:#5d6763;--line:#d6dbd5;--accent:#2f5d8a;color-scheme:light}
+  @media (prefers-color-scheme:dark){:root{--bg:#141917;--surface:#1b211e;--ink:#e7ebe6;--muted:#9aa5a0;--line:#2f3833;--accent:#7fb0e0;color-scheme:dark}}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:720px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left,0px)) 64px}
+  h1{font-size:30px;line-height:1.15;margin:12px 0 6px}
+  h2{font-size:19px;margin:28px 0 6px}
+  p,li{max-width:68ch}
+  ul{padding-left:20px}
+  .muted{color:var(--muted)}
+  a{color:var(--accent)}
+  .back{display:inline-block;margin-top:4px;font-weight:600}
+  table{border-collapse:collapse;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;font-size:15px}
+  th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .tbl{overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← Til Sjakkverkstedet</a>
+  <h1>Personvern</h1>
+  <p class="muted">Sist endret 1. november 2026</p>
+
+  <p>Sjakkverkstedet er et gratis sjakkprogram som drives privat av Bent Arne. Her står hva som lagres om deg, hvorfor, hvor lenge, og hvordan du får se eller slette det.</p>
+
+  <h2>Uten innlogging</h2>
+  <p>Du kan bruke analyse, sjakknøtter og spill mot bot uten konto. Da lagres ratingen, partiene og innstillingene dine bare i nettleseren din (localStorage) på enheten du bruker. Ingenting av dette sendes til oss. Du sletter det ved å tømme nettstedsdata for siden i nettleseren.</p>
+
+  <h2>Med innlogging</h2>
+  <p>Logger du inn med Google, Facebook eller Vipps, lagres dette:</p>
+  <div class="tbl"><table>
+    <tr><th>Hva</th><th>Hvorfor</th></tr>
+    <tr><td>En intern bruker-ID og ID-en fra innloggingstjenesten</td><td>For å kjenne deg igjen når du logger inn</td></tr>
+    <tr><td>E-postadressen innloggingstjenesten gir oss</td><td>Brukes bare av innloggingen. Vi sender ingen e-post.</td></tr>
+    <tr><td>Visningsnavn (fra innloggingstjenesten, kan endres)</td><td>Vises for motstanderen når du spiller mot en venn</td></tr>
+    <tr><td>Rating, løste nøtter, partier og trekk</td><td>For å regne ut ratingen og vise partiene dine på alle enhetene dine</td></tr>
+    <tr><td>Lagrede partier, analyser og et parti du er midt i</td><td>Så du kan fortsette på en annen enhet</td></tr>
+  </table></div>
+  <p>Vi lagrer ikke passord. Vi bruker ingen sporing, ingen statistikkverktøy og ingen reklame. Innloggingen lagrer en nøkkel i nettleseren din så du forblir innlogget; den brukes ikke til noe annet.</p>
+  <p>Grunnlaget for behandlingen er at du har bedt om en konto, og at opplysningene trengs for å levere den (personvernforordningen artikkel 6 nr. 1 bokstav b).</p>
+
+  <h2>Hvem andre som behandler opplysningene</h2>
+  <ul>
+    <li><strong>Supabase</strong> lagrer kontoen og dataene i en database i EU, og står for innloggingen.</li>
+    <li><strong>Google, Facebook (Meta) eller Vipps MobilePay</strong>, den du velger, bekrefter hvem du er når du logger inn. Hva de lagrer, står i deres egne personvernerklæringer.</li>
+    <li><strong>GitHub Pages</strong> leverer selve nettsiden. Som alle nettsteder ser de IP-adressen din når siden lastes.</li>
+  </ul>
+  <p>Når du spiller mot en venn, ser vennen din visningsnavnet ditt, trekkene og resultatet. Andre ser ingenting.</p>
+
+  <h2>Hvor lenge</h2>
+  <p>Opplysningene lagres til du sletter kontoen. Sikkerhetskopier av databasen tas før hver oppdatering og slettes etter 90 dager.</p>
+
+  <h2>Dine rettigheter</h2>
+  <ul>
+    <li><strong>Se dataene dine:</strong> Min konto → «Last ned mine data» gir deg alt som er lagret om deg, som en fil.</li>
+    <li><strong>Rette:</strong> Du kan endre visningsnavnet under Min konto.</li>
+    <li><strong>Slette:</strong> Min konto → «Slett kontoen» sletter kontoen, ratingen og de lagrede partiene dine. Partier mot andre beholdes for motstanderen, men uten navnet ditt.</li>
+    <li><strong>Klage:</strong> Mener du at opplysningene dine behandles feil, kan du klage til <a href="https://www.datatilsynet.no/">Datatilsynet</a>.</li>
+  </ul>
+
+  <h2>Kontakt</h2>
+  <p>Spørsmål om personvern kan sendes som en sak på <a href="https://github.com/bentarne-jpg/ClaudeChess/issues">GitHub</a>.</p>
+</main>
+</body>
+</html>
