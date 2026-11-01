@@ -1,0 +1,19 @@
+{
+  "name": "@sjakk/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource/archivo": "*",
+    "@fontsource/jetbrains-mono": "*",
+    "@fontsource/source-sans-3": "*",
+    "@sjakk/domain": "0.1.0",
+    "chess.js": "0.10.3"
+  }
+}

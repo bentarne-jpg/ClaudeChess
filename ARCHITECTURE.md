@@ -190,15 +190,33 @@ Initial tables: `users`, `ratings`, `games`, `game_players`, `moves`, `puzzle_at
 ## 8. Delivery and environments
 
 - **E1** All changes go through a branch and a pull request. Nothing is pushed directly to `main`.
-- **E2** CI runs on every pull request: typecheck, lint, boundary rules (A7), all tests, build. A
-  red pipeline blocks merging.
-- **E3** Merging to `main` deploys the web app to GitHub Pages. Database migrations and Edge
-  Functions are deployed by a separate, manually started workflow (or on a tagged release), so a
-  web deploy never changes the database by surprise.
+  A pull request is merged only when CI is green. Merging never changes production (E6).
+- **E2** CI runs on every push and pull request: typecheck, lint, boundary rules (A7), all tests,
+  build. A red pipeline blocks merging and blocks releasing.
+- **E3** The site has three channels (see `docs/RELEASING.md`):
+  - **development:** every `dev/<name>` branch is built and published at `/dev/<name>/` for testing;
+  - **staging:** `main` is published at `/next/`;
+  - **production:** the site root, changed only by the Release or Rollback workflow.
+  Database migrations and Edge Functions follow the same channels: dev and staging use the staging
+  Supabase project, production uses the production project.
 - **E4** CI runs the full Supabase stack locally (`supabase start`) for database and API tests. A
   separate staging project SHOULD be added before person-vs-person play is opened to others.
 - **E5** Generated files (for example the offline build) are produced in CI and published as
   release assets, not committed.
+- **E6** Production changes only through a release that the owner asks for. A release has a semantic
+  version (`vMAJOR.MINOR.PATCH`), is built from a commit with a green CI run, and is first tested
+  on staging or a dev channel.
+- **E7** Every released version MUST be kept and stay reachable: as a folder at
+  `/releases/<version>/`, as a git tag with a GitHub Release (with its offline file), and in
+  `versions.json`. Released versions are never deleted or overwritten.
+- **E8** Rollback MUST always be possible to any kept release, without rebuilding, with the
+  Rollback workflow. The last known good version is the release currently in production that has
+  passed its post-release check; before a release, the previous one is the rollback target.
+- **E9** Database changes MUST be backward compatible with the release before them (expand, then
+  contract in a later release), so a web rollback never breaks against the current database. A
+  database backup is taken before every production migration.
+- **E10** Before working on a change, read `versions.json` on the live site (or the `site` branch)
+  to know what is in production, on staging and in each dev channel.
 
 ## 9. Change protocol
 
@@ -265,3 +283,5 @@ is complete:
   4. **Hardening:** observability, rate-limit tuning, fair-play checks.
 - **R3** The Claude artifact version stays a single-player demo; the GitHub Pages site becomes the
   main app from phase 2.
+- **R4** `apps/web/src/legacy/` holds the not-yet-migrated feature code. New features MUST NOT be
+  added there; code leaving it moves into `features/`, `ui/`, `core/` or the domain with tests.

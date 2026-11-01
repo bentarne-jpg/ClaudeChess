@@ -1,0 +1,128 @@
+# Publishes the site (manifest E3, E6–E9). See docs/RELEASING.md.
+#   push to main          → staging at /next/
+#   push to dev/<name>    → preview at /dev/<name>/
+#   delete dev/<name>     → removes that preview
+#   Run workflow: release → builds `ref` (CI must have passed on it), keeps it at /releases/<version>/,
+#                           makes it production, tags it and creates a GitHub Release with the offline file
+#   Run workflow: rollback → makes an earlier release production again, without rebuilding
+name: Deploy
+on:
+  push:
+    branches: [main, "dev/**"]
+  delete:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "release or rollback"
+        type: choice
+        options: [release, rollback]
+        required: true
+      version:
+        description: "Version, e.g. v1.1.0"
+        required: true
+      ref:
+        description: "Branch, tag or commit to release (release only)"
+        default: main
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  actions: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.event_name != 'delete' || startsWith(github.event.ref, 'dev/')
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && 'production' || 'preview' }}
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Work out the channel
+        id: ch
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          DELETED: ${{ github.event.ref }}
+          ACTION: ${{ inputs.action }}
+          VERSION: ${{ inputs.version }}
+          INPUT_REF: ${{ inputs.ref }}
+        run: |
+          case "$EVENT" in
+            delete) { echo "channel=remove-dev/${DELETED#dev/}"; echo "build=false"; } >> "$GITHUB_OUTPUT" ;;
+            workflow_dispatch)
+              if [ "$ACTION" = release ]; then { echo "channel=production"; echo "build=true"; echo "ref=$INPUT_REF"; } >> "$GITHUB_OUTPUT"
+              else { echo "channel=rollback"; echo "build=false"; } >> "$GITHUB_OUTPUT"; fi
+              echo "version=$VERSION" >> "$GITHUB_OUTPUT" ;;
+            push)
+              if [ "$REF_NAME" = main ]; then echo "channel=next" >> "$GITHUB_OUTPUT"; else echo "channel=$REF_NAME" >> "$GITHUB_OUTPUT"; fi
+              { echo "build=true"; echo "ref=$GITHUB_SHA"; } >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Check out the code to build
+        if: steps.ch.outputs.build == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ steps.ch.outputs.ref }}", path: src, fetch-depth: 0 }
+      - name: Check out the deploy tools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { ref: "${{ github.event.repository.default_branch }}", path: tools-src, sparse-checkout: tools }
+      - name: Only release code that passed CI
+        if: steps.ch.outputs.channel == 'production'
+        working-directory: src
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          SHA=$(git rev-parse HEAD)
+          if [ -f apps/web/package.json ]; then
+            OK=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$SHA&status=success" --jq '[.workflow_runs[]|select(.name=="CI")]|length')
+            [ "$OK" -gt 0 ] || { echo "::error::CI has not passed on $SHA. Release a commit with a green CI run."; exit 1; }
+          fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: steps.ch.outputs.build == 'true'
+        with: { node-version: 22 }
+      - name: Build
+        if: steps.ch.outputs.build == 'true'
+        working-directory: src
+        run: |
+          mkdir -p ../build
+          if [ -f apps/web/package.json ]; then
+            npm ci && npm run build && python3 tools/build_offline.py
+            cp -r apps/web/dist/. ../build/ && cp dist/Sjakkverkstedet-offline.html ../offline.html
+          else
+            # Releases from before the monorepo: the static app/ folder is the site.
+            cp -r app/. ../build/ && cp dist/Sjakkverkstedet-offline.html ../offline.html
+          fi
+      - name: Check out the site branch
+        env: { REPO_URL: "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" }
+        run: |
+          if git ls-remote --exit-code --heads "$REPO_URL" site >/dev/null; then
+            git clone -q --depth 1 --branch site "$REPO_URL" site
+          else
+            # First run: start the site with v1.0.0, the version that was live before this workflow existed.
+            git clone -q --depth 1 --branch release/v1.0.0 "$REPO_URL" v1
+            mkdir site && git -C site init -q -b site && git -C site remote add origin "$REPO_URL"
+            mkdir -p site/releases/v1.0.0 && cp -r v1/app/. site/releases/v1.0.0/ && cp -r v1/app/. site/
+            echo '{"production":"v1.0.0","history":[{"at":"2026-11-01T00:00:00+00:00","action":"production","version":"v1.0.0"}]}' > site/versions.json
+          fi
+      - name: Update the site
+        env: { CHANNEL: "${{ steps.ch.outputs.channel }}", VERSION: "${{ steps.ch.outputs.version }}" }
+        run: python3 tools-src/tools/site.py build "$CHANNEL" "$VERSION"
+      - name: Save the site
+        working-directory: site
+        env: { CHANNEL: "${{ steps.ch.outputs.channel }}", VERSION: "${{ steps.ch.outputs.version }}" }
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Deploy $CHANNEL $VERSION (${GITHUB_SHA::7})" && git push -q origin site
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with: { path: site }
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Tag and publish the GitHub Release
+        if: steps.ch.outputs.channel == 'production'
+        working-directory: src
+        env: { GH_TOKEN: "${{ github.token }}", VERSION: "${{ steps.ch.outputs.version }}" }
+        run: |
+          cp ../offline.html "../Sjakkverkstedet-offline-$VERSION.html"
+          gh release create "$VERSION" "../Sjakkverkstedet-offline-$VERSION.html" --repo "$GITHUB_REPOSITORY" \
+            --target "$(git rev-parse HEAD)" --title "$VERSION" --generate-notes

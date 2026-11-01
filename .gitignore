@@ -1,3 +1,8 @@
 node_modules/
+dist/
+apps/web/dist/
+playwright-report/
+test-results/
+coverage/
 __pycache__/
-.DS_Store
+*.tsbuildinfo

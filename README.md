@@ -20,32 +20,23 @@ recorded in [`docs/adr/`](docs/adr/).
 
 ## Running it
 
-The app is static files. Serve the `app/` folder with any web server, for example:
+The repository is an npm workspace (Node 22):
 
 ```sh
-cd app
-python3 -m http.server 8000
+npm ci
+npm run dev          # the app at http://localhost:5173
+npm run check        # typecheck, lint and layer rules, unit tests, build
+npx playwright test  # end-to-end tests (desktop and phone sizes)
+npm run build:offline  # dist/Sjakkverkstedet-offline.html, one file that runs from disk
 ```
 
-Then open <http://localhost:8000>. In a Codespace, open the forwarded port 8000.
+Open the app with `?engine=fake` to use a fast, deterministic stand-in for Stockfish.
 
-Opening `app/index.html` directly from disk does not work, because browsers block loading the
-engine and data files from `file://`. Use the offline file for that.
+## Versions and releases
 
-### Offline version
-
-`dist/Sjakkverkstedet-offline.html` is one file (about 4.5 MB) with everything inlined. Open it
-straight from disk, without a network connection. Rebuild it after changing the app:
-
-```sh
-python3 tools/build_offline.py
-```
-
-### Publishing with GitHub Pages
-
-The workflow in `.github/workflows/pages.yml` publishes `app/` on every push to `main`. Turn it
-on once under Settings → Pages → Build and deployment → Source: **GitHub Actions**. The app is
-then at `https://<your-username>.github.io/ClaudeChess/`.
+Production, staging (`/next/`), development previews (`/dev/<name>/`) and every released version
+(`/releases/<version>/`) are all on the GitHub Pages site. How to test, release and roll back is in
+[`docs/RELEASING.md`](docs/RELEASING.md).
 
 ## Where data is kept
 
@@ -54,26 +45,26 @@ Ratings, the game in progress and your list of games are stored in the browser
 your Claude account, so they follow you between devices. That account storage is only
 available inside claude.ai.
 
-## Files
+## Layout
 
 | Path | What it is |
-| --- | --- |
-| `app/index.html` | The whole app: markup, styles and script |
-| `app/chess.js` | chess.js 0.10.3, move generation and PGN handling |
-| `app/stockfish.js`, `app/stockfish.wasm`, `app/stockfish.asm.js` | Stockfish 10 compiled for the browser (stockfish.js 10.0.2) |
-| `app/openings.json` | Position → ECO code and opening name |
-| `app/puzzles.json` | `[id, FEN, solution moves, rating]` for each puzzle |
-| `dist/Sjakkverkstedet-offline.html` | Single-file offline build |
-| `tools/build_offline.py` | Builds the offline file from `app/` |
+|---|---|
+| `packages/domain/` | Rules and maths shared by the app and (later) the server: move classification, accuracy, puzzle rating, clock, time controls, PGN, openings. Pure TypeScript with unit tests |
+| `apps/web/` | The web app (Vite). `src/core/` display text, `src/adapters/` engine and storage adapters, `src/legacy/` the feature code still being migrated |
+| `apps/web/public/` | Stockfish 10 (stockfish.js 10.0.2), the opening table and the puzzles |
+| `tests/e2e/` | Playwright tests |
+| `tools/` | Offline build and the Pages site assembler |
+| `ARCHITECTURE.md` | The architecture manifest every change is checked against |
+| `docs/adr/` | Architecture decision records |
 
 ## Credits and licences
 
 - **Stockfish** – GPL-3.0, by the Stockfish developers; browser build by Nathan Rugg
   ([nmrugg/stockfish.js](https://github.com/nmrugg/stockfish.js)). Licence text in
-  `app/STOCKFISH-COPYING.txt`. Because the app ships Stockfish, distributing it falls under the
+  `apps/web/public/STOCKFISH-COPYING.txt`. Because the app ships Stockfish, distributing it falls under the
   GPL: keep this notice and make the source available.
 - **chess.js** – BSD-2-Clause, by Jeff Hlywa ([jhlywa/chess.js](https://github.com/jhlywa/chess.js)).
-  Licence text in `app/CHESSJS-LICENSE.txt`.
+  Licence text in `apps/web/public/CHESSJS-LICENSE.txt`.
 - **Openings** – [lichess-org/chess-openings](https://github.com/lichess-org/chess-openings) (CC0).
 - **Puzzles** – a subset of the [Lichess puzzle database](https://database.lichess.org/#puzzles)
   (CC0), as collected in [FeXd/puzzle-chess](https://github.com/FeXd/puzzle-chess).
