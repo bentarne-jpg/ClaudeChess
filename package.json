@@ -1,0 +1,31 @@
+{
+  "name": "sjakkverkstedet",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @sjakk/web",
+    "build": "npm run build -w @sjakk/web",
+    "build:offline": "npm run build && python3 tools/build_offline.py",
+    "typecheck": "tsc -b",
+    "lint": "eslint . && depcruise --config .dependency-cruiser.cjs packages apps/web/src",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "dependency-cruiser": "^18.7.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "typescript": "5.9",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}
