@@ -1,15 +1,21 @@
 {
-  "production": "v1.0.0",
+  "production": "v2.0.0",
   "history": [
     {
       "at": "2026-11-01T00:00:00+00:00",
       "action": "production",
       "version": "v1.0.0"
+    },
+    {
+      "at": "2026-11-01T08:36:07+00:00",
+      "action": "production",
+      "version": "v2.0.0"
     }
   ],
   "releases": [
-    "v1.0.0"
+    "v1.0.0",
+    "v2.0.0"
   ],
   "dev": [],
-  "updated": "2026-11-01T08:32:55+00:00"
+  "updated": "2026-11-01T08:36:07+00:00"
 }
