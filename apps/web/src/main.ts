@@ -12,6 +12,9 @@ import { mountAccount } from "./features/account/account-ui.ts";
 import { mountOnline } from "./features/online/online-ui.ts";
 
 accountContext().then(({ config, account, online, live }) => {
+  // Back to the invitation the person was opening when they logged in.
+  const back = account?.resumeAfterLogin();
+  if (back && location.hash !== back) location.hash = back;
   const slot = document.getElementById("acct-slot");
   if (slot) mountAccount(slot, config, account);
   const venn = document.getElementById("tab-venn");

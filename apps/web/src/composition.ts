@@ -20,6 +20,7 @@ export function accountContext(): Promise<AccountContext> {
     const api = sb.supabaseApi(client, config.supabase.url, config.supabase.anonKey);
     const account = await createAccount({
       auth: sb.supabaseAuth(client), api,
+      memo: { get: (k) => sessionStorage.getItem(k), set: (k, v) => sessionStorage.setItem(k, v), remove: (k) => sessionStorage.removeItem(k) },
       profiles: sb.supabaseProfiles(client), location: window.location,
     });
     const signedIn = !!account.session;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiCallError, createAccount, type ApiPort, type AuthPort } from "../src/core/account.ts";
+import { ApiCallError, createAccount, returnHashFor, type ApiPort, type AuthPort } from "../src/core/account.ts";
 import { readConfig } from "../src/core/config.ts";
 
 describe("readConfig", () => {
@@ -11,13 +11,37 @@ describe("readConfig", () => {
   });
 });
 
-function setup(session: { userId: string; email: null } | null, reply: (route: string) => unknown = () => ({})) {
+function setup(session: { userId: string; email: null } | null, reply: (route: string) => unknown = () => ({}), hash = "#notter") {
   const auth: AuthPort = { session: async () => session, signIn: vi.fn(async () => {}), signOut: vi.fn(async () => {}) };
   const api: ApiPort = { call: vi.fn(async (route: string) => { const r = reply(route); if (r instanceof Error) throw r; return r; }) as never };
-  const location = { href: "https://x/app/?a=1#notter", reload: vi.fn() };
+  const location = { href: "https://x/app/?a=1" + hash, hash, reload: vi.fn() };
+  const store = new Map<string, string>();
+  const memo = { get: (k: string) => store.get(k) ?? null, set: (k: string, v: string) => void store.set(k, v), remove: (k: string) => void store.delete(k) };
   const profiles = { get: vi.fn(async () => ({ displayName: "A", ratings: [] })), rename: vi.fn(async () => {}) };
-  return { auth, api, location, profiles };
+  return { auth, api, location, profiles, memo, store };
 }
+
+describe("returning after login", () => {
+  it("keeps invitations and games, nothing else", () => {
+    expect(returnHashFor("#venn/abcdefghij")).toBe("#venn/abcdefghij");
+    expect(returnHashFor("#venn/g/00000000-0000-4000-8000-000000000001")).toBe("#venn/g/00000000-0000-4000-8000-000000000001");
+    expect(returnHashFor("#notter")).toBeNull();
+    expect(returnHashFor("#venn/<script>")).toBeNull();
+  });
+  it("remembers the invitation across the login redirect, once", async () => {
+    const out = setup(null, () => ({}), "#venn/abcdefghij");
+    await (await createAccount(out)).signIn("google");
+    expect(out.store.get("sjakk.afterLogin")).toBe("#venn/abcdefghij");
+    const back = await createAccount({ ...out, auth: { ...out.auth, session: async () => ({ userId: "u", email: null }) } });
+    expect(back.resumeAfterLogin()).toBe("#venn/abcdefghij");
+    expect(back.resumeAfterLogin()).toBeNull();
+  });
+  it("forgets an old target when logging in from elsewhere", async () => {
+    const p = setup(null); p.store.set("sjakk.afterLogin", "#venn/abcdefghij");
+    await (await createAccount(p)).signIn("google");
+    expect(p.store.has("sjakk.afterLogin")).toBe(false);
+  });
+});
 
 describe("account", () => {
   it("returns to the home page after login", async () => {

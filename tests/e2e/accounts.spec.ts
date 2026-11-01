@@ -94,3 +94,29 @@ test("signed in: a resigned bot game is sent once with its moves", async ({ page
   expect(calls.find((c) => c.route === "bot-game/finish")!.body).toMatchObject({ color: "w", reason: "resign" });
   await expect(page.locator("#g-msg")).toHaveText("Bot-rating: 1500 → 1488");
 });
+
+test("signed out: an invitation link explains the invite and comes back to it after login", async ({ page }) => {
+  await mockSupabase(page);
+  await open(page, "venn/abcdefghij");
+  await expect(page.locator("#tab-venn h1")).toHaveText("Du er invitert til et parti");
+  await expect(page.locator("#ol-login")).toHaveText("Logg inn og bli med");
+  await page.click("#ol-login");
+  await page.locator("#acct-dlg .providers button", { hasText: "Google" }).click();
+  await page.waitForURL(/supabase\.test\/auth\/v1\/authorize/);
+  // Back from the provider, signed in, on the home page: the app returns to the invitation.
+  await page.addInitScript(signedIn);
+  await page.goto("./?engine=fake&test#hjem");
+  await expect(page).toHaveURL(/#venn\/abcdefghij$/);
+});
+
+test("copying the invitation link falls back when the clipboard API is refused", async ({ page }) => {
+  await mockSupabase(page);
+  await page.route("http://supabase.test/functions/v1/api/pvp/create", (r) => r.fulfill({ status: 200, contentType: "application/json", headers: { "access-control-allow-origin": "*" },
+    body: JSON.stringify({ id: "00000000-0000-4000-8000-000000000001", status: "open", inviteCode: "abcdefghij", you: "w" }) }));
+  await page.addInitScript(() => { Object.defineProperty(navigator, "clipboard", { value: { writeText: () => Promise.reject(new Error("denied")) } }); });
+  await open(page, "venn", signedIn);
+  await page.click("#ol-create");
+  await page.click("#ol-copy");
+  await expect(page.locator("#ol-copied")).toHaveText(/kopiert|markert/);
+  expect(await page.evaluate(() => { const f = document.getElementById("ol-link") as HTMLInputElement; return f.selectionEnd! - f.selectionStart!; })).toBeGreaterThan(20);
+});
