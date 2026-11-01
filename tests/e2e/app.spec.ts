@@ -74,6 +74,12 @@ test("bot game: set up with a clock, play a move, the bot answers, resign", asyn
   await page.click("#g-resign");
   await page.click("#g-yes");
   await expect(page.locator("#g-board .endcard")).toBeVisible();
+  // Browsing the finished game with the arrow keys closes the card and does not bring it back.
+  for (const key of ["ArrowLeft", "ArrowLeft", "ArrowRight", "ArrowRight", "ArrowLeft"]) {
+    await page.keyboard.press(key);
+    await expect(page.locator("#g-board .endcard")).toHaveCount(0);
+  }
+  await expect(page.locator("#g-status")).toHaveText("Partiet er ferdig · Du ga opp");
   expect(errors).toEqual([]);
 });
 
