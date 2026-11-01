@@ -8,6 +8,7 @@ import { clocksNow, statusText, type LivePort, type Online } from "../../core/on
 import { clockText, timeControlLabel, timeControlLong } from "../../core/format.ts";
 import { Board } from "../../ui/board.js";
 import { PIECES } from "../../ui/pieces.js";
+import { copyText } from "../../ui/copy.ts";
 import "./online.css";
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string, unknown> = {}, ...kids: (Node | string)[]): HTMLElementTagNameMap[K] {
@@ -32,7 +33,7 @@ export function mountOnline(root: HTMLElement, deps: { online: Online | null; li
   const show = (tab: string, args: string[]) => {
     stop(); stop = () => {};
     if (tab !== "venn") return;
-    if (!deps.online) return renderSignedOut();
+    if (!deps.online) return renderSignedOut(args[0] ?? null);
     if (args[0] === "g" && args[1]) return renderGame(args[1]);
     if (args[0]) return renderJoin(args[0]);
     return renderLobby();
@@ -41,10 +42,14 @@ export function mountOnline(root: HTMLElement, deps: { online: Online | null; li
   const seg = location.hash.slice(1).split("/");
   show(seg[0] ?? "", seg.slice(1));
 
-  function renderSignedOut() {
-    root.replaceChildren(el("div", { className: "card" }, el("h1", { textContent: "Spill mot en venn" }),
-      el("p", { textContent: "Logg inn for å utfordre en venn. Da lagres partiet og ratingen din." }),
-      el("button", { type: "button", className: "btn primary", textContent: "Logg inn", onclick: deps.signIn })));
+  function renderSignedOut(invite: string | null) {
+    const joining = !!invite && invite !== "g";
+    root.replaceChildren(el("div", { className: "card", id: "ol-signedout" },
+      el("h1", { textContent: joining ? "Du er invitert til et parti" : invite === "g" ? "Et parti mot en venn" : "Spill mot en venn" }),
+      el("p", { textContent: joining
+        ? "En venn har sendt deg en invitasjon til et parti sjakk. Logg inn for å se invitasjonen og bli med. Du kommer tilbake hit etterpå."
+        : invite === "g" ? "Logg inn for å se og fortsette partiet." : "Logg inn for å utfordre en venn. Da lagres partiet og ratingen din." }),
+      el("button", { type: "button", className: "btn primary", id: "ol-login", textContent: joining ? "Logg inn og bli med" : "Logg inn", onclick: deps.signIn })));
   }
 
   async function renderLobby() {
@@ -69,12 +74,19 @@ export function mountOnline(root: HTMLElement, deps: { online: Online | null; li
     };
     const showInvite = (s: PvpState) => {
       const link = `${location.href.split("#")[0]}#venn/${s.inviteCode}`;
+      const field = el("input", { className: "ol-link", id: "ol-link", readOnly: true, value: link, ariaLabel: "Invitasjonslenke", onfocus: () => field.select() });
+      const copied = el("p", { className: "msg", id: "ol-copied", role: "status" });
       out.replaceChildren(el("p", { textContent: "Send denne lenken til vennen din. Partiet starter når den godtas." }),
-        el("div", { className: "ol-link", id: "ol-link", textContent: link }),
+        field,
         el("div", { className: "ol-row" },
-          el("button", { type: "button", className: "btn small", textContent: "Kopier lenken", onclick: async () => { try { await navigator.clipboard.writeText(link); } catch { /* not allowed */ } } }),
+          el("button", { type: "button", className: "btn small", id: "ol-copy", textContent: "Kopier lenken", onclick: async () => {
+            const r = await copyText(link, field);
+            copied.className = r === "copied" ? "msg ok" : "msg";
+            copied.textContent = r === "copied" ? "Lenken er kopiert. Lim den inn i en melding til vennen din." : "Lenken er markert. Kopier den med Ctrl+C (Cmd+C på Mac), eller hold fingeren på den på mobil.";
+          } }),
           ...(navigator.share ? [el("button", { type: "button", className: "btn small", textContent: "Del", onclick: () => navigator.share({ title: "Sjakk?", url: link }).catch(() => {}) })] : []),
-          el("button", { type: "button", className: "btn small", textContent: "Avbryt invitasjonen", onclick: async () => { await o.abort(s.id).catch(() => {}); out.replaceChildren(); } })));
+          el("button", { type: "button", className: "btn small", textContent: "Avbryt invitasjonen", onclick: async () => { await o.abort(s.id).catch(() => {}); out.replaceChildren(); } })),
+        copied);
       waitFor(s.id);
     };
     const waitFor = (id: string) => {

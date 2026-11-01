@@ -24,7 +24,11 @@ test("two friends play a game through the server", async ({ browser }) => {
   await alice.locator("#ol-tcs button", { hasText: "3+2" }).click();
   await alice.locator("#ol-color button", { hasText: "Hvit" }).click();
   await alice.click("#ol-create");
-  const link = (await alice.locator("#ol-link").textContent())!;
+  const link = await alice.locator("#ol-link").inputValue();
+  await alice.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await alice.click("#ol-copy");
+  await expect(alice.locator("#ol-copied")).toHaveText(/kopiert/);
+  expect(await alice.evaluate(() => navigator.clipboard.readText())).toBe(link);
   expect(link).toMatch(/#venn\/[a-z0-9]{10}$/);
 
   const bob = await player(browser, "token-bob", link.split("#")[1]!);

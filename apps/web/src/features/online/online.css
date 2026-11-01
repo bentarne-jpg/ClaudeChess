@@ -7,7 +7,8 @@
 .ol-chips button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 12px;font:600 14px var(--f-mono);cursor:pointer}
 .ol-chips button[aria-pressed="true"]{background:var(--m-fr);border-color:var(--m-fr);color:#fff}
 .ol-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.ol-link{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.ol-link{display:block;width:100%;box-sizing:border-box;font-family:var(--f-mono);font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.ol-link:focus{outline:2px solid var(--m-fr);outline-offset:1px}
 .ol-game{display:grid;grid-template-columns:minmax(0,560px) minmax(0,1fr);gap:18px;align-items:start}
 .ol-side{display:grid;gap:10px}
 .ol-player{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-weight:600}
