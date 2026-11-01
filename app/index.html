@@ -105,11 +105,12 @@ textarea{width:100%;min-height:130px;resize:vertical;font-family:var(--f-mono);f
 .summary .card{padding:10px 12px;gap:6px}
 .summary .acc{font-size:20px}
 .summary .chip{font-size:12px}
-.side-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.side-head b{font-family:var(--f-display);font-stretch:112%;font-weight:600;font-size:17px;overflow-wrap:anywhere}
+.side-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px}
+.side-head b{flex:1 1 9em;min-width:0;font-family:var(--f-display);font-stretch:112%;font-weight:600;font-size:17px;line-height:1.2;overflow-wrap:break-word}
 .acc{font-family:var(--f-mono);font-weight:700;font-size:24px;white-space:nowrap}
 .acc small{font-size:12px;color:var(--muted);font-weight:500;margin-left:4px;letter-spacing:.04em;text-transform:uppercase}
-.counts{display:flex;flex-wrap:wrap;gap:6px}
+.counts{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;align-content:flex-start}
+.summary .card{align-content:start;justify-content:flex-start}
 .chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:2px 9px 2px 3px;border-radius:999px;border:1px solid var(--line);background:var(--bg)}
 .chip .n{font-family:var(--f-mono);font-weight:700}
 
@@ -201,6 +202,16 @@ body[data-tab="analyse"]{--accent:var(--m-an)} body[data-tab="notter"]{--accent:
 .resume:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #a-choose .glist{max-height:none}
 #a-jumps button{font-family:var(--f-body);font-size:14px}
+#a-try{flex:1.3}
+.exbar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:4px 6px 4px 10px;border-radius:8px;background:var(--hl);font-size:14px;font-weight:600;color:var(--ink)}
+.exbar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exbar .btn{flex:none}
+.exline{font-family:var(--f-mono);font-size:13.5px;line-height:1.8;margin:0}
+.exline .n{color:var(--muted)}
+.exline button{font:inherit;border:0;background:none;color:var(--ink);padding:0 3px;border-radius:4px;cursor:pointer}
+.exline button.on{background:var(--accent);color:var(--on-accent)}
+.exline button:focus-visible{outline:2px solid var(--accent)}
+#a-card.explore{border-left:4px solid var(--hl)}
 .tabs a .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
 .tabs a[data-tab="analyse"] .dot{background:var(--m-an)} .tabs a[data-tab="notter"] .dot{background:var(--m-pz)} .tabs a[data-tab="spill"] .dot{background:var(--m-pl)}
 .tabs a[data-tab="analyse"][aria-current="page"]{background:var(--m-an)} .tabs a[data-tab="notter"][aria-current="page"]{background:var(--m-pz)} .tabs a[data-tab="spill"][aria-current="page"]{background:var(--m-pl)}
@@ -403,7 +414,7 @@ footer p{margin:0}
   #p-puzzle{padding:8px 12px;gap:4px} #p-puzzle .pstatus{font-size:15px} #p-msg:empty{display:none}
   .levels{grid-template-columns:repeat(2,1fr)}
   /* analysis */
-  #a-view > header{order:1} #a-progress{order:2} #tab-analyse .boardrow{order:3} #a-nav{order:4} #a-jumps{order:5} #a-card{order:6}
+  #a-view > header{order:1} #a-progress{order:2} #tab-analyse .boardrow{order:3} #a-nav{order:4} #a-jumps{order:5} #a-exbar{order:5} #a-card{order:6}
   #a-summary{order:7} #tab-analyse .list{order:8} #tab-analyse .graphwrap{order:9} #tab-analyse .panel > details{order:10}
   #tab-analyse .boardrow{width:min(100%,calc(100dvh - 380px + 26px));min-width:250px;margin-inline:auto}
   #a-view .ahead-act .btn{height:34px;font-size:14px}
@@ -517,7 +528,9 @@ footer p{margin:0}
         <div class="controls" id="a-jumps">
           <button id="a-preverr" class="txt">‹ Forrige</button>
           <button id="a-nexterr" class="txt">Neste feil ›</button>
+          <button id="a-try" class="txt">Prøv egne trekk</button>
         </div>
+        <div class="exbar" id="a-exbar" hidden><span id="a-extxt"></span><button class="btn small primary" id="a-exback" type="button">Tilbake til analysen</button></div>
         <div class="graphwrap">
           <div class="cap"><span>Hvit leder ↑</span><span>Klikk for å hoppe til et trekk</span></div>
           <svg class="graph" id="a-graph" tabindex="0" aria-label="Evalueringsgraf"></svg>
@@ -674,7 +687,7 @@ footer p{margin:0}
   </section>
 
   <footer id="footer">
-    <p data-for="analyse">I analysen: bla med <span class="kbd">←</span> og <span class="kbd">→</span>, klikk på et trekk eller i grafen, eller hopp mellom feilene. Trekkene merkes etter hvor mye vinnersjansen endrer seg, slik chess.com gjør.</p>
+    <p data-for="analyse">I analysen: bla med <span class="kbd">←</span> og <span class="kbd">→</span>, klikk på et trekk eller i grafen, eller hopp mellom feilene. Flytt en brikke for å prøve egne trekk fra stillingen; <span class="kbd">Esc</span> tar deg tilbake.</p>
     <p data-for="notter">Nøttene kommer fra Lichess' åpne nøttedatabase (CC0): 24 595 nøtter fra 400 til 3166 i rating. Ratingen din er foreløpig, merket med «?», de første 10 nøttene.</p>
     <p data-for="spill">Bla i partiet med <span class="kbd">←</span> og <span class="kbd">→</span> eller ved å klikke på et trekk. Det endrer ikke partiet, og klokken går videre. Botens styrke er omtrentlig.</p>
     <p>Sjakkmotor: Stockfish 10 (GPL), som kjører i nettleseren din. Åpninger og nøtter fra Lichess (CC0). Brikker: cburnett.</p>
@@ -892,7 +905,7 @@ function parsePGN(text){
    ===================================================================== */
 const A={G:null,cur:0,flipped:false,job:0,engine:Engine(),board:null};
 const STORE_A="pgn-analyse-siste";
-A.board=Board($("a-board"));
+A.board=Board($("a-board"),{onMove:(f,t,p)=>exMove(f,t,p)});
 function aWhiteEval(i){const G=A.G,T=G.term[i];if(T)return T;const R=G.raw[i];if(!R||!R.lines.length)return null;
   const s=G.fens[i].split(" ")[1]==="w"?1:-1,l=R.lines[0];return l.type==="mate"?{cp:null,mate:l.val*s}:{cp:l.val*s,mate:null}}
 function aClassify(k){
@@ -911,7 +924,7 @@ function aClassify(k){
   let best=null; if(Ar.best&&Ar.best!=="(none)"){const c=new Chess(m.fenBefore);const mv=c.move({from:Ar.best.slice(0,2),to:Ar.best.slice(2,4),promotion:Ar.best[4]||"q"});best=mv?mv.san:null}
   let note=NOTE[cls]; const ev=G.evals[k]; if(ev&&ev.mate&&ev.mate!==0) note+=` Matt i ${Math.abs(ev.mate)} for ${ev.mate>0?"hvit":"svart"}.`;
   return {cls,best,bu:Ar.best,loss:Math.round(loss*10)/10,note}}
-function aNewGame(parsed,o){
+function aNewGame(parsed,o){ A.ex=null; exUi();
   const N=parsed.moves.length;
   A.G={headers:parsed.headers,startFen:parsed.startFen,moves:parsed.moves,fens:[parsed.startFen,...parsed.moves.map(m=>m.fen)],
     evals:new Array(N+1).fill(null),res:new Array(N).fill(null),raw:new Array(N+1).fill(null),depth:o.depth,example:!!o.example,pgn:o.pgn,op:{book:[]}};
@@ -947,7 +960,7 @@ function aActBtn(){const b=$("a-analyze"); if(!b) return; const done=aAnalysed()
   b.hidden=!A.G||!!A.running||(done&&d>=20)||(!!g&&g.source==="example"&&done);
   b.textContent=done?"Analyser grundigere":"Fullfør analysen"; aJumps()}
 $("a-analyze").onclick=()=>{const g=Games.get(A.gameId); if(g) aRun(g.pgn,{gameId:g.id,depth:aAnalysed()?20:Math.max(A.depth,(A.G&&A.G.depth)||0)})};
-$("a-new").onclick=()=>aMode("choose");
+$("a-new").onclick=()=>{exLeave(true);aMode("choose")};
 /* Jump between the mistakes (yours when we know your colour, otherwise both sides). */
 const ERRS=["inaccuracy","mistake","blunder"];
 function aErrPlies(){ if(!A.G) return []; const me=(Games.get(A.gameId)||{}).color;
@@ -986,10 +999,10 @@ function aSummary(){const G=A.G,sum=$("a-summary"),h=G.headers; sum.innerHTML=""
     const a=aAcc(c),el=document.createElement("div");el.className="card";
     el.innerHTML=`<div class="side-head"><b></b><span class="acc">${a==null?"–":a.toFixed(1)}<small>Nøyaktighet</small></span></div><div class="counts">${ORDER.filter(k=>cnt[k]).map(k=>`<span class="chip">${icon(k)}<span class="n">${cnt[k]}</span>${CLS[k].n}</span>`).join("")||'<span class="hint">Venter på analyse …</span>'}</div>`;
     el.querySelector("b").textContent=n+(c==="w"?" · hvit":" · svart"); sum.appendChild(el)})}
-function aRender(){ if(!A.G) return;
+function aRender(){ if(!A.G) return; if(A.ex) return exRender();
   const G=A.G,N=G.moves.length,cur=A.cur,mv=cur>0?G.moves[cur-1]:null,rs=cur>0?G.res[cur-1]:null;
   A.board.set({fen:G.fens[cur],flipped:A.flipped,animate:Math.abs(cur-(A.prevCur??cur))===1,last:mv?{from:mv.from,to:mv.to}:null,badge:mv?{sq:mv.to,cls:rs?rs.cls:"pending"}:null,
-    arrow:rs&&rs.bu&&!NOBEST.includes(rs.cls)?rs.bu:null});
+    arrow:rs&&rs.bu&&!NOBEST.includes(rs.cls)?rs.bu:null, movable:terminalEval(G.fens[cur])?null:G.fens[cur].split(" ")[1]});
   A.prevCur=cur; const ev=G.evals[cur],w=wp(ev); $("a-evalbar").classList.toggle("flip",A.flipped); $("a-evalw").style.height=w+"%";
   const t=ev?evText(ev):"",ws=A.flipped?$("a-lbltop"):$("a-lblbot"),bs=A.flipped?$("a-lblbot"):$("a-lbltop");
   ws.style.color="var(--bar-black)";bs.style.color="var(--bar-white)";ws.textContent=w>=50?t:"";bs.textContent=w<50?t:"";
@@ -1008,18 +1021,80 @@ function aBuildList(){const tb=$("a-tbody");tb.innerHTML="";let tr=null;
   A.G.moves.forEach((m,i)=>{if(m.c==="w"||i===0){tr=document.createElement("tr");tr.innerHTML=`<td class="no">${m.fenBefore.split(" ")[5]}.</td><td></td><td></td>`;tb.appendChild(tr)}
     const td=tr.children[m.c==="w"?1:2];td.innerHTML=`<button class="mv" data-i="${i+1}"><span class="i"></span><span></span></button>`;td.querySelector("span:last-child").textContent=m.san}); aIcons()}
 function aIcons(){document.querySelectorAll("#a-tbody .mv").forEach(b=>{const r=A.G.res[+b.dataset.i-1];b.querySelector(".i").innerHTML=icon(r?r.cls:"pending")})}
-$("a-tbody").addEventListener("click",e=>{const b=e.target.closest(".mv");if(b){A.cur=+b.dataset.i;aRender()}});
+$("a-tbody").addEventListener("click",e=>{const b=e.target.closest(".mv");if(b){exLeave(true);A.cur=+b.dataset.i;aRender()}});
 $("a-legend").innerHTML=ORDER.map(k=>`<span>${icon(k,14)}${CLS[k].n}</span>`).join("");
 const GR=$("a-graph"),GW=600,GH=110; GR.setAttribute("viewBox",`0 0 ${GW} ${GH}`); GR.setAttribute("preserveAspectRatio","none");
 function aGraph(){const G=A.G,N=G.moves.length,gx=i=>i/N*GW,gy=i=>GH-wp(G.evals[i])/100*GH; let last=-1; for(let i=0;i<=N;i++){if(G.evals[i])last=i;else break}
   let poly=""; if(last>=0){const pts=[];for(let i=0;i<=last;i++)pts.push(`${gx(i).toFixed(1)},${gy(i).toFixed(1)}`);poly=`<polygon points="0,${GH} ${pts.join(" ")} ${gx(last).toFixed(1)},${GH}" fill="var(--bar-white)"/>`}
   const marks=G.moves.map((m,i)=>{const r=G.res[i];return r&&["inaccuracy","mistake","blunder","great","brilliant"].includes(r.cls)&&G.evals[i+1]?`<circle cx="${gx(i+1)}" cy="${gy(i+1)}" r="3.6" fill="var(${CLS[r.cls].c})" stroke="var(--surface)" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`:""}).join("");
   GR.innerHTML=`<rect x="0" y="0" width="${GW}" height="${GH}" fill="var(--bar-black)" opacity=".9"/>${poly}<line x1="0" y1="${GH/2}" x2="${GW}" y2="${GH/2}" stroke="rgba(128,128,128,.7)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/><line x1="${gx(A.cur)}" y1="0" x2="${gx(A.cur)}" y2="${GH}" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>${marks}`}
-function aJump(e){const r=GR.getBoundingClientRect(),N=A.G.moves.length;A.cur=Math.max(0,Math.min(N,Math.round((e.clientX-r.left)/r.width*N)));aRender()}
+function aJump(e){exLeave(true);const r=GR.getBoundingClientRect(),N=A.G.moves.length;A.cur=Math.max(0,Math.min(N,Math.round((e.clientX-r.left)/r.width*N)));aRender()}
 let gdrag=false; GR.addEventListener("pointerdown",e=>{gdrag=true;GR.setPointerCapture(e.pointerId);aJump(e)}); GR.addEventListener("pointermove",e=>{if(gdrag)aJump(e)}); GR.addEventListener("pointerup",()=>gdrag=false);
 function aUpdate(){aIcons();aSummary();aHeader();aRender()}
 const aGo=i=>{A.cur=Math.max(0,Math.min(A.G.moves.length,i));aRender()};
-$("a-first").onclick=()=>aGo(0);$("a-prev").onclick=()=>aGo(A.cur-1);$("a-next").onclick=()=>aGo(A.cur+1);$("a-last").onclick=()=>aGo(A.G.moves.length);
+/* The navigation buttons and arrow keys move through whichever line is on screen: the game, or your test line. */
+function aNav(k){ if(!A.G) return; if(A.ex){const X=A.ex; exGo(k==="first"?0:k==="prev"?X.cur-1:k==="next"?X.cur+1:X.moves.length); return}
+  aGo(k==="first"?0:k==="prev"?A.cur-1:k==="next"?A.cur+1:A.G.moves.length)}
+$("a-first").onclick=()=>aNav("first");$("a-prev").onclick=()=>aNav("prev");$("a-next").onclick=()=>aNav("next");$("a-last").onclick=()=>aNav("last");
+
+/* ---------- Try your own moves from any point in the analysis ----------
+   A test line starts at the position on the board. You move for both sides; each move is checked by
+   the engine. Going back and playing something else replaces the rest of the line. "Tilbake til analysen"
+   returns to the exact point you started from. */
+A.ex=null; A.exEngine=Engine(); const EXC=new Map();
+function exStart(){ if(!A.G||A.ex) return; A.ex={base:A.cur,fens:[A.G.fens[A.cur]],moves:[],cur:0}; exUi(); exRender(); exEval(0)}
+function exLeave(quiet){ if(!A.ex) return; const base=A.ex.base; A.ex=null; exUi(); if(!quiet){A.cur=base; aRender()}}
+function exUi(){ const on=!!A.ex; $("a-jumps").hidden=on; $("a-exbar").hidden=!on; $("a-card").classList.toggle("explore",on);
+  $("a-preverr").disabled=$("a-nexterr").disabled=on||$("a-preverr").disabled}
+function exMove(from,to,promo){ if(!A.G) return; if(!A.ex) exStart(); const X=A.ex;
+  const c=new Chess(X.fens[X.cur]); const m=c.move({from,to,promotion:promo||undefined}); if(!m) return;
+  const uci=m.from+m.to+(m.promotion||"");
+  if(X.cur<X.moves.length&&X.moves[X.cur].uci===uci){X.cur++}
+  else{X.moves.length=X.cur; X.fens.length=X.cur+1; X.moves.push({san:m.san,uci,from:m.from,to:m.to,c:m.color}); X.fens.push(c.fen()); X.cur++}
+  exRender(true); exEval(X.cur); exEval(X.cur-1)}
+function exGo(i){ const X=A.ex; const n=Math.max(0,Math.min(X.moves.length,i)); const anim=Math.abs(n-X.cur)===1; X.cur=n; exRender(!anim)}
+/* engine look at a test position (cached by position) */
+async function exEval(i){ const X=A.ex; if(!X||i<0) return; const fen=X.fens[i]; if(!fen||EXC.has(fen)) {exRender(true);return}
+  const T=terminalEval(fen); if(T){EXC.set(fen,{T}); exRender(true); return}
+  EXC.set(fen,null);
+  try{ const r=await A.exEngine.search(fen,{depth:14,multipv:1}); EXC.set(fen,r); if(A.ex===X) exRender(true) }catch(e){EXC.delete(fen)}}
+function exWhite(fen){ const r=EXC.get(fen); if(!r) return null; if(r.T) return r.T; if(!r.lines||!r.lines.length) return null;
+  const sg=fen.split(" ")[1]==="w"?1:-1, l=r.lines[0]; return l.type==="mate"?{cp:null,mate:l.val*sg}:{cp:l.val*sg,mate:null}}
+function exClass(i){ // grade test move i (1-based) the same way as the game's moves
+  const X=A.ex, m=X.moves[i-1], A0=EXC.get(X.fens[i-1]), B=EXC.get(X.fens[i]); if(!A0||!A0.lines||!B) return null;
+  const before=cpOf(A0.lines[0]); let after;
+  if(B.T) after=B.T.mate===0?10000:0; else if(B.lines&&B.lines.length) after=-cpOf(B.lines[0]); else return null;
+  const loss=Math.max(0,wpc(before)-wpc(after)); let cls;
+  if(m.uci===A0.best||loss<0.5) cls="best"; else if(after<=-9000&&before>-9000) cls="blunder";
+  else if(loss<=2) cls="excellent"; else if(loss<=5) cls="good"; else if(loss<=10) cls="inaccuracy"; else if(loss<=20) cls="mistake"; else cls="blunder";
+  let best=null; if(A0.best&&A0.best!=="(none)"&&cls!=="best"){const t=new Chess(X.fens[i-1]); const b=t.move({from:A0.best.slice(0,2),to:A0.best.slice(2,4),promotion:A0.best[4]||"q"}); best=b?b.san:null}
+  return {cls,best,bu:A0.best}}
+function exLabel(fen,ply){ const f=fen.split(" "); return `${f[5]}${f[1]==="w"?".":"..."}`}
+function exRender(still){ const X=A.ex, G=A.G; if(!X) return;
+  const fen=X.fens[X.cur], mv=X.cur?X.moves[X.cur-1]:null, gm=G.moves[X.base-1];
+  const cl=mv?exClass(X.cur):null, ev=exWhite(fen);
+  A.board.set({fen,flipped:A.flipped,animate:!still,last:mv?{from:mv.from,to:mv.to}:gm?{from:gm.from,to:gm.to}:null,
+    badge:mv?{sq:mv.to,cls:cl?cl.cls:"pending"}:null, arrow:cl&&cl.bu&&cl.cls!=="best"?cl.bu:null, movable:terminalEval(fen)?null:fen.split(" ")[1]});
+  const w=wp(ev); $("a-evalbar").classList.toggle("flip",A.flipped); $("a-evalw").style.height=w+"%";
+  const t=ev?evText(ev):"",ws=A.flipped?$("a-lbltop"):$("a-lblbot"),bs=A.flipped?$("a-lblbot"):$("a-lbltop");
+  ws.style.color="var(--bar-black)";bs.style.color="var(--bar-white)";ws.textContent=w>=50?t:"";bs.textContent=w<50?t:"";
+  const from=X.base?`${Math.ceil(X.base/2)}${X.base%2?".":"..."} ${G.moves[X.base-1].san}`:"startstillingen";
+  $("a-extxt").textContent=`Egne trekk fra ${from}`;
+  const card=$("a-card"); const T=terminalEval(fen);
+  if(!mv){card.innerHTML=`<div class="top"><span class="mvname">Prøv egne trekk</span><span class="ev">${ev?evText(ev):"…"}</span></div><p class="note">Flytt en brikke for å prøve et trekk. Du flytter for begge sider. Bla tilbake med pilene og spill noe annet for å teste en ny vei.</p>`}
+  else{ const k=CLS[cl?cl.cls:"pending"];
+    card.innerHTML=`<div class="top"><span class="mvname"></span><span class="tag" style="background:var(${k.c})">${icon(cl?cl.cls:"pending",20)}${k.n}</span><span class="ev">${ev?evText(ev):"…"}</span></div><p class="note"></p>`;
+    card.querySelector(".mvname").textContent=`${exLabel(X.fens[X.cur-1])} ${mv.san}`;
+    card.querySelector(".note").textContent=T&&T.mate===0?"Sjakkmatt.":T?"Remis.":!cl?"Motoren vurderer trekket …":cl.cls==="best"?"Motorens førstevalg.":`${NOTE[cl.cls]} Motorens beste trekk var ${cl.best||"et annet"}.`}
+  const line=document.createElement("p"); line.className="exline";
+  X.moves.forEach((m,i)=>{ const f=X.fens[i].split(" "); if(f[1]==="w"||i===0){const n=document.createElement("span");n.className="n";n.textContent=`${f[5]}${f[1]==="w"?".":"..."} `;line.appendChild(n)}
+    const b=document.createElement("button");b.type="button";b.textContent=m.san;b.dataset.i=i+1;if(i+1===X.cur)b.className="on";line.appendChild(b);line.appendChild(document.createTextNode(" "))});
+  if(X.moves.length) card.appendChild(line);
+  line.addEventListener("click",e=>{const b=e.target.closest("button"); if(b) exGo(+b.dataset.i)});
+  document.querySelectorAll("#a-tbody .mv").forEach(b=>b.classList.toggle("on",+b.dataset.i===X.base));
+  $("a-first").disabled=$("a-prev").disabled=X.cur===0; $("a-last").disabled=$("a-next").disabled=X.cur===X.moves.length}
+$("a-try").onclick=exStart;
+$("a-exback").onclick=()=>exLeave(false);
 $("a-flip").onclick=()=>{A.flipped=!A.flipped;aRender()};
 $("a-go").onclick=()=>{A.userPicked=true;aRun($("a-pgn").value)};
 $("a-pgn").addEventListener("input",()=>{$("a-msg").textContent=""});
@@ -1482,7 +1557,7 @@ async function homeRender(){
 window.addEventListener("hashchange",route);
 document.addEventListener("keydown",e=>{if(/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName))return;
   if(!$("tab-analyse").hidden&&A.G&&!$("a-view").hidden){
-    if(e.key==="ArrowRight"){aGo(A.cur+1);e.preventDefault()}else if(e.key==="ArrowLeft"){aGo(A.cur-1);e.preventDefault()}else if(e.key==="Home")aGo(0);else if(e.key==="End")aGo(A.G.moves.length)}
+    if(e.key==="ArrowRight"){aNav("next");e.preventDefault()}else if(e.key==="ArrowLeft"){aNav("prev");e.preventDefault()}else if(e.key==="Home")aNav("first");else if(e.key==="End")aNav("last");else if(e.key==="Escape"&&A.ex)exLeave(false)}
   else if(!$("tab-spill").hidden&&Gm.chess){ const n=Gm.chess.history().length, at=Gm.view??n;
     if(e.key==="ArrowRight"){gView(at+1);e.preventDefault()}else if(e.key==="ArrowLeft"){gView(at-1);e.preventDefault()}else if(e.key==="Home"){gView(0);e.preventDefault()}else if(e.key==="End"){gView(Infinity);e.preventDefault()}}});
 
