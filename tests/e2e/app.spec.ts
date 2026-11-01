@@ -76,3 +76,14 @@ test("bot game: set up with a clock, play a move, the bot answers, resign", asyn
   await expect(page.locator("#g-board .endcard")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("the privacy page is linked from the footer and loads under its own strict policy", async ({ page }) => {
+  const errors = await open(page);
+  await page.click("#privacy-link");
+  await expect(page).toHaveURL(/personvern\.html$/);
+  await expect(page.locator("h1")).toHaveText("Personvern");
+  await expect(page.locator("main")).toContainText("Slett kontoen");
+  await page.click("a.back");
+  await expect(page.locator('a.mod[href="#analyse"]')).toBeVisible();
+  expect(errors).toEqual([]);
+});

@@ -48,6 +48,7 @@ test("signed out: the login dialog offers Google, Facebook and Vipps", async ({ 
   await expect(page.locator("#acct-btn")).toHaveText("Logg inn");
   await page.click("#acct-btn");
   await expect(page.locator("#acct-dlg .providers button")).toHaveText(["Fortsett med Google", "Fortsett med Facebook", "Fortsett med Vipps"]);
+  await expect(page.locator('#acct-dlg a[href="personvern.html"]')).toBeVisible();
   await page.locator("#acct-dlg .providers button", { hasText: "Google" }).click();
   await page.waitForURL(/supabase\.test\/auth\/v1\/authorize\?provider=google/);
 });
