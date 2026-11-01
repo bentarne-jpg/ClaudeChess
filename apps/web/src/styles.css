@@ -367,7 +367,7 @@ footer p{margin:0}
   .card{padding:10px 12px}
   .controls{gap:6px} .controls button{height:38px;min-width:0;flex:1;font-size:15px}
   .board{margin-inline:auto}
-  footer{display:none}
+  footer{display:none} body[data-tab="hjem"] footer{display:grid}
   /* home */
   .hero{padding-block:6px 0}
   .hero h1{font-size:26px}

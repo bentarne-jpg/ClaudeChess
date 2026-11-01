@@ -36,6 +36,7 @@ export function mountAccount(slot: HTMLElement, config: AppConfig, account: Acco
     dlg.replaceChildren(
       el("h2", { textContent: "Logg inn" }),
       el("p", { textContent: "Med en konto lagres ratingen og partiene dine, og du kan bruke dem på alle enhetene dine. Vi lagrer ikke passord." }),
+      el("p", {}, el("a", { href: "personvern.html", textContent: "Les hva som lagres (personvern)" })),
       list, msg,
       el("div", { className: "row" }, el("button", { type: "button", className: "btn small", textContent: "Avbryt", onclick: () => dlg.close() })),
     );
@@ -76,7 +77,7 @@ export function mountAccount(slot: HTMLElement, config: AppConfig, account: Acco
           } catch { msg.textContent = "Kunne ikke hente dataene."; } } }),
         el("button", { type: "button", className: "btn small", textContent: "Logg ut", onclick: () => account!.signOut() }),
       ),
-      el("div", { className: "row" }, del),
+      el("div", { className: "row" }, del, el("a", { href: "personvern.html", className: "btn small", textContent: "Personvern" })),
       msg,
       el("div", { className: "row" }, el("button", { type: "button", className: "btn small", textContent: "Lukk", onclick: () => dlg.close() })),
     );
