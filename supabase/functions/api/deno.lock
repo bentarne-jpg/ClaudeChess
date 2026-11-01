@@ -1,0 +1,26 @@
+{
+  "version": "5",
+  "specifiers": {
+    "npm:chess.js@0.10.3": "0.10.3",
+    "npm:postgres@3.4.7": "3.4.7",
+    "npm:zod@3.25.76": "3.25.76"
+  },
+  "npm": {
+    "chess.js@0.10.3": {
+      "integrity": "sha512-i51JgVM0ksFMbLJYKoDpfrcFxJHq/XQQx8NltCdfMyDv7vpU5JVzsZz1EOw7nA27eGA5t8tSxodAN+Wc704BoQ=="
+    },
+    "postgres@3.4.7": {
+      "integrity": "sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw=="
+    },
+    "zod@3.25.76": {
+      "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:chess.js@0.10.3",
+      "npm:postgres@3.4.7",
+      "npm:zod@3.25.76"
+    ]
+  }
+}

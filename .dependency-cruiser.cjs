@@ -13,6 +13,10 @@ module.exports = {
     { name: "no-new-legacy-dependants", comment: "R1: nothing new may depend on the legacy app",
       severity: "error", from: { path: "^apps/web/src/(core|adapters|features|ui)" },
       to: { path: "^apps/web/src/legacy" } },
+    { name: "server-not-web", comment: "the server package never depends on the web app",
+      severity: "error", from: { path: "^packages/(server|contracts|domain)" }, to: { path: "^apps/" } },
+    { name: "contracts-only-zod", comment: "A6: message schemas depend only on zod",
+      severity: "error", from: { path: "^packages/contracts/src" }, to: { pathNot: ["^packages/contracts/src", "zod"] } },
     { name: "no-circular", severity: "error", from: {}, to: { circular: true } },
   ],
   options: {

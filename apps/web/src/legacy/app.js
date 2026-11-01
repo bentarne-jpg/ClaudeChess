@@ -5,6 +5,8 @@ import * as D from "@sjakk/domain";
 import * as F from "../core/format.ts";
 import { fakeEngine } from "../adapters/fake-engine.ts";
 import { EX, PIECES } from "./data.js";
+import { accountContext, legacyAccountStore } from "../composition.ts";
+let ACC=null; accountContext().then(c=>{ACC=c});
 const $=id=>document.getElementById(id);
 (()=>{ const stop=e=>e.preventDefault();
   ["gesturestart","gesturechange","gestureend"].forEach(t=>document.addEventListener(t,stop,{passive:false}));
@@ -375,7 +377,9 @@ const ratingChange=D.puzzleRatingChange, freshProfile=D.freshPuzzleProfile;
 /* Account storage: the db capability keeps each person's own documents under data/users/<id>/,
    so ratings follow the account across sessions and devices. Browser storage is a backup. */
 const Acct={db:null,uid:null,ready:null};
-Acct.ready=(async()=>{ try{ if(OFF||!(window.claude&&claude.use)) return false;
+Acct.ready=(async()=>{ try{ if(OFF) return false;
+    const sb=await legacyAccountStore(); if(sb){Acct.db=sb.db; Acct.uid=sb.uid; return true}
+    if(!(window.claude&&claude.use)) return false;
     const to=new Promise(r=>setTimeout(()=>r([null,null]),12000));
     const [db,user]=await Promise.race([Promise.all([claude.use("db"),claude.use("user")]),to]);
     if(!db||!user) return false; const id=await user.id(); if(!id) return false; Acct.db=db; Acct.uid=id; return true}catch(e){return false}})();
@@ -441,7 +445,7 @@ async function pMove(from,to,promo){
   if(!ok){ if(!cur.failed){cur.failed=true;cur.why="feil trekk";await pFinish(false,true)}
     $("p-msg").className="msg err";$("p-msg").textContent="Ikke riktig. Prøv igjen, eller trykk «Vis løsning».";
     P.board.set({marks:{[to]:"wrong"}}); setTimeout(()=>{if(P.cur===cur&&!cur.done)P.board.set({marks:{}})},700); return}
-  pPlay(uci); cur.step++; $("p-msg").className="msg ok"; $("p-msg").textContent=cur.step>=cur.moves.length||test.in_checkmate()?"Riktig!":"Riktig! Nøtta er ikke ferdig – se motstanderens svar og finn neste trekk.";
+  (cur.played||(cur.played=[])).push(uci); pPlay(uci); cur.step++; $("p-msg").className="msg ok"; $("p-msg").textContent=cur.step>=cur.moves.length||test.in_checkmate()?"Riktig!":"Riktig! Nøtta er ikke ferdig – se motstanderens svar og finn neste trekk.";
   if(cur.step>=cur.moves.length||test.in_checkmate()){await pFinish(!cur.failed,false);return}
   P.board.set({movable:null}); await sleep(650); if(P.cur!==cur) return;
   pPlay(cur.moves[cur.step]); cur.step++;
@@ -459,7 +463,12 @@ async function pFinishInner(win,stillPlaying){
   pr.log=(pr.log||[]).concat([{r:cur.rating,d,win,why:win?"løst":cur.why||"ikke løst"}]).slice(-12);
   try{pStats()}catch(e){console.warn(e)}
   if(!stillPlaying) pDone(win);
-  pSave().catch(e=>console.warn(e))}
+  pSave().catch(e=>console.warn(e));
+  // Signed in: the server checks the result and owns the rating (manifest S5); show its numbers.
+  if(ACC&&ACC.account&&ACC.account.session) ACC.account.puzzleResult({puzzleId:cur.id,solved:win,moves:cur.played||[],reason:win?"løst":(cur.why||"ikke løst")})
+    .then(r=>{ if(P.profile!==pr) return; Object.assign(pr,r.profile); store.set(STORE_P,pr);
+      if(r.rated){del.textContent=(r.delta>=0?"+":"−")+Math.abs(Math.round(r.delta)); del.className="delta "+(r.delta>=0?"up":"down")} try{pStats()}catch(e){} })
+    .catch(e=>console.warn("puzzle result not saved",e))}
 function pDone(win){const cur=P.cur;cur.done=true;P.board.set({movable:null});
   $("p-status").textContent=win?"Løst!":"Nøtta er ferdig"; $("p-msg").className="msg "+(win?"ok":"");
   $("p-msg").textContent=win?"Godt funnet. Neste nøtt blir litt vanskeligere.":"Den telles som ikke løst. Neste nøtt blir litt enklere.";
@@ -670,7 +679,14 @@ function gUncount(){const r=Gm.lastCounted; if(r&&Gm.record[r]>0) Gm.record[r]--
 function gArchive(){ if(!Gm.chess||!gResult()) return; if(!Gm.gameId) Gm.gameId="b_"+Date.now(); Gm.endedAt=Gm.endedAt||Date.now();
   const old=Games.get(Gm.gameId); const pgn=gPgn(); if(old&&old.pgn===pgn) return;
   Games.put({id:Gm.gameId,source:"bot",pgn,color:Gm.color,botRating:Gm.rating,result:gResult(),ended:Gm.endedAt});
-  aGames()}
+  aGames(); gReport(pgn)}
+/* Signed in: send the finished game to the server once; it checks it and updates the bot rating. */
+function gReport(pgn){ if(!(ACC&&ACC.account&&ACC.account.session)||Gm.reported===Gm.gameId) return; Gm.reported=Gm.gameId;
+  const c=Gm.chess, reason=Gm.resigned?"resign":Gm.flag?"timeout":c.in_checkmate()?"checkmate":c.in_stalemate()?"stalemate":"draw";
+  ACC.account.finishBotGame({clientId:Gm.gameId,pgn,color:Gm.color,botRating:Math.max(400,Math.min(3200,Math.round(Gm.rating))),
+    timeControl:Gm.clock?Gm.clock.tc:null,reason,...(Gm.flag?{flagged:Gm.flag}:{})})
+    .then(r=>{ if(r&&r.rating){$("g-msg").className="msg ok"; $("g-msg").textContent=`Bot-rating: ${r.rating.before} → ${r.rating.after}`} })
+    .catch(e=>console.warn("game not saved",e))}
 function gCount(){ if(Gm.counted) return; Gm.counted=true; const r=gResult(); const mine=Gm.color==="w"?"1-0":"0-1";
   const k=r==="1/2-1/2"?"d":r===mine?"w":"l"; Gm.record[k]++; Gm.lastCounted=k; Gm.endedAt=Date.now(); gRecord(); gSave(); gArchive()}
 function gRecord(){const r=Gm.record||{w:0,d:0,l:0}; $("g-record").textContent=(r.w+r.d+r.l)?`Dine resultater mot boten: ${r.w} seire, ${r.d} remis, ${r.l} tap`:""}

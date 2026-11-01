@@ -40,8 +40,9 @@ Production, staging (`/next/`), development previews (`/dev/<name>/`) and every 
 
 ## Where data is kept
 
-Ratings, the game in progress and your list of games are stored in the browser
-(`localStorage`). When the page runs as a Claude artifact on claude.ai, it also stores them on
+Signed in (Google, Facebook or Vipps), ratings, puzzle history and games are stored in Supabase;
+ratings are computed only on the server. Signed out, everything stays in the browser
+(`localStorage`) as before, and is imported once on the first sign-in. When the page runs as a Claude artifact on claude.ai, it also stores them on
 your Claude account, so they follow you between devices. That account storage is only
 available inside claude.ai.
 
@@ -50,6 +51,9 @@ available inside claude.ai.
 | Path | What it is |
 |---|---|
 | `packages/domain/` | Rules and maths shared by the app and (later) the server: move classification, accuracy, puzzle rating, clock, time controls, PGN, openings. Pure TypeScript with unit tests |
+| `packages/contracts/` | Every message between app and server, as zod schemas |
+| `packages/server/` | Server use cases (puzzles, bot games, account) with ports, an in-memory adapter for tests and a Postgres adapter |
+| `supabase/` | Database migrations with row-level security, the `api` Edge Function, database tests. Setup: [`docs/SETUP-SUPABASE.md`](docs/SETUP-SUPABASE.md) |
 | `apps/web/` | The web app (Vite). `src/core/` display text, `src/adapters/` engine and storage adapters, `src/legacy/` the feature code still being migrated |
 | `apps/web/public/` | Stockfish 10 (stockfish.js 10.0.2), the opening table and the puzzles |
 | `tests/e2e/` | Playwright tests |

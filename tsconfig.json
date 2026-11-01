@@ -1,1 +1,1 @@
-{ "files": [], "references": [{ "path": "packages/domain" }, { "path": "apps/web" }] }
+{ "files": [], "references": [{ "path": "packages/domain" }, { "path": "packages/contracts" }, { "path": "packages/server" }, { "path": "apps/web" }] }

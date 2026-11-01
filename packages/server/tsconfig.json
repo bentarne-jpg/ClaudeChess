@@ -1,0 +1,4 @@
+{ "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "emitDeclarationOnly": true, "noEmit": false, "outDir": "../../node_modules/.tsbuild/server", "types": ["node"] },
+  "include": ["src", "test", "../domain/src/chessjs.d.ts"],
+  "references": [{ "path": "../domain" }, { "path": "../contracts" }] }

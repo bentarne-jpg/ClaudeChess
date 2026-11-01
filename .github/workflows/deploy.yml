@@ -82,6 +82,12 @@ jobs:
       - name: Build
         if: steps.ch.outputs.build == 'true'
         working-directory: src
+        # Production talks to the production Supabase project; staging and dev previews to the staging one.
+        # Unset variables leave accounts off (docs/SETUP-SUPABASE.md).
+        env:
+          VITE_SUPABASE_URL: ${{ steps.ch.outputs.channel == 'production' && vars.PROD_SUPABASE_URL || vars.STAGING_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ steps.ch.outputs.channel == 'production' && vars.PROD_SUPABASE_ANON_KEY || vars.STAGING_SUPABASE_ANON_KEY }}
+          VITE_AUTH_PROVIDERS: ${{ steps.ch.outputs.channel == 'production' && vars.PROD_AUTH_PROVIDERS || vars.STAGING_AUTH_PROVIDERS }}
         run: |
           mkdir -p ../build
           if [ -f apps/web/package.json ]; then

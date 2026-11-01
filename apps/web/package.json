@@ -14,6 +14,7 @@
     "@fontsource/jetbrains-mono": "*",
     "@fontsource/source-sans-3": "*",
     "@sjakk/domain": "0.1.0",
+    "@supabase/supabase-js": "^2.118.0",
     "chess.js": "0.10.3"
   }
 }
