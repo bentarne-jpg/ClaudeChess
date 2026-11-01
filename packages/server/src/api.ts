@@ -8,6 +8,7 @@ import type { Deps } from "./ports.ts";
 import { getPuzzleProfile, recordPuzzleResult, resetPuzzles, startPuzzles } from "./puzzles.ts";
 import { finishBotGame } from "./botgames.ts";
 import { deleteAccount, exportAccount, importLocal } from "./account.ts";
+import { abort, acceptChallenge, challengeInfo, claimTimeout, createChallenge, draw, gameState, makeMove, myGames, resign } from "./pvp.ts";
 
 export interface ApiReply { status: number; body: unknown }
 
@@ -28,6 +29,16 @@ export async function handleApi(deps: Deps, route: string, userId: string | null
         case "account/import": return importLocal(deps, userId, b);
         case "account/export": return exportAccount(deps, userId);
         case "account/delete": return deleteAccount(deps, userId);
+        case "pvp/create": return createChallenge(deps, userId, b);
+        case "pvp/info": return challengeInfo(deps, userId, b);
+        case "pvp/accept": return acceptChallenge(deps, userId, b);
+        case "pvp/state": return gameState(deps, userId, b);
+        case "pvp/move": return makeMove(deps, userId, b);
+        case "pvp/resign": return resign(deps, userId, b);
+        case "pvp/draw": return draw(deps, userId, b);
+        case "pvp/claim-timeout": return claimTimeout(deps, userId, b);
+        case "pvp/abort": return abort(deps, userId, b);
+        case "pvp/list": return myGames(deps, userId);
       }
     })();
     return { status: 200, body };

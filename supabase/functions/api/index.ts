@@ -19,6 +19,7 @@ const deps: Deps = {
   store: postgresStore(sql),
   puzzles: { get: (id) => byId.get(id) ?? null },
   clock: { now: () => new Date() },
+  inviteCode: () => Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join(""),
   auth: {
     async deleteUser(id) {
       const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, { method: "DELETE", headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } });

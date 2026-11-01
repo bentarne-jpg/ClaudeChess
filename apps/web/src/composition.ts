@@ -4,8 +4,9 @@
  */
 import { readConfig, type AppConfig } from "./core/config.ts";
 import { createAccount, type Account } from "./core/account.ts";
+import { createOnline, type LivePort, type Online } from "./core/online.ts";
 
-export interface AccountContext { config: AppConfig; account: Account | null; docs: unknown | null }
+export interface AccountContext { config: AppConfig; account: Account | null; docs: unknown | null; online: Online | null; live: LivePort | null }
 
 let ctx: Promise<AccountContext> | null = null;
 
@@ -13,15 +14,18 @@ export function accountContext(): Promise<AccountContext> {
   ctx ??= (async () => {
     const config = readConfig(import.meta.env as Record<string, string | undefined>);
     const offline = (globalThis as { OFFLINE?: unknown }).OFFLINE;
-    if (!config.supabase || offline) return { config, account: null, docs: null };
+    if (!config.supabase || offline) return { config, account: null, docs: null, online: null, live: null };
     const sb = await import("./adapters/supabase.ts");
     const client = sb.supabaseClient(config.supabase.url, config.supabase.anonKey);
+    const api = sb.supabaseApi(client, config.supabase.url, config.supabase.anonKey);
     const account = await createAccount({
-      auth: sb.supabaseAuth(client), api: sb.supabaseApi(client, config.supabase.url, config.supabase.anonKey),
+      auth: sb.supabaseAuth(client), api,
       profiles: sb.supabaseProfiles(client), location: window.location,
     });
-    return { config, account, docs: account.session ? sb.supabaseDocs(client, account.session.userId) : null };
-  })().catch((e) => { console.warn("accounts unavailable", e); return { config: readConfig({}), account: null, docs: null }; });
+    const signedIn = !!account.session;
+    return { config, account, docs: signedIn ? sb.supabaseDocs(client, account.session!.userId) : null,
+      online: signedIn ? createOnline(api) : null, live: signedIn ? sb.supabaseLive(client) : null };
+  })().catch((e) => { console.warn("accounts unavailable", e); return { config: readConfig({}), account: null, docs: null, online: null, live: null }; });
   return ctx;
 }
 

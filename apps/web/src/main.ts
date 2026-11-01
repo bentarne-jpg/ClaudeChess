@@ -9,8 +9,11 @@ import "./styles.css";
 import "./legacy/app.js";
 import { accountContext } from "./composition.ts";
 import { mountAccount } from "./features/account/account-ui.ts";
+import { mountOnline } from "./features/online/online-ui.ts";
 
-accountContext().then(({ config, account }) => {
+accountContext().then(({ config, account, online, live }) => {
   const slot = document.getElementById("acct-slot");
   if (slot) mountAccount(slot, config, account);
+  const venn = document.getElementById("tab-venn");
+  if (venn) mountOnline(venn, { online, live, enabled: !!config.supabase && !!account, signIn: () => document.getElementById("acct-btn")?.click() });
 });

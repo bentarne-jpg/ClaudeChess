@@ -75,6 +75,18 @@ describe.skipIf(!db)("api Edge Function over HTTP", () => {
     expect(g).toEqual([{ black_id: BOB, white_id: null }]);
   });
 
+  it("plays a person-vs-person game between two logins", async () => {
+    const c = (await (await post("pvp/create", { timeControl: { m: 3, i: 2 }, color: "w", rated: true }, "token-alice")).json()) as { id: string; inviteCode: string };
+    expect(c).toMatchObject({ status: "open", you: "w" });
+    expect(c.inviteCode).toMatch(/^[a-z0-9]{10}$/);
+    expect(await (await post("pvp/accept", { code: c.inviteCode }, "token-bob")).json()).toMatchObject({ status: "active", you: "b" });
+    const plies = ["f2f3", "e7e5", "g2g4", "d8h4"];
+    let s;
+    for (let i = 0; i < plies.length; i++) s = await (await post("pvp/move", { gameId: c.id, uci: plies[i], ply: i + 1 }, i % 2 ? "token-bob" : "token-alice")).json();
+    expect(s).toMatchObject({ status: "finished", result: "0-1", reason: "checkmate" });
+    expect(await db!.sql`select count(*)::int as n from public.moves where game_id = ${c.id}`).toEqual([{ n: 4 }]);
+  });
+
   it("rejects malformed and oversized bodies", async () => {
     const r = await fetch(`${API}/puzzle/start`, { method: "POST", headers: { Authorization: "Bearer token-alice" }, body: "{" });
     expect(r.status).toBe(400);

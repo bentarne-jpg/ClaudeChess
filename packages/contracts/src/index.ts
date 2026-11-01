@@ -52,6 +52,28 @@ export const ImportLocal = z.object({
 export const DeleteAccount = z.object({ confirm: z.literal("SLETT") }).strict();
 export const Empty = z.object({}).strict();
 
+// ---- person vs person ----
+const gameId = z.string().uuid();
+const inviteCode = z.string().regex(/^[a-z0-9]{10}$/);
+export const PvpCreate = z.object({ timeControl: TimeControl.nullable(), color: z.enum(["w", "b", "random"]), rated: z.boolean() }).strict();
+export const PvpCode = z.object({ code: inviteCode }).strict();
+export const PvpGame = z.object({ gameId }).strict();
+export const PvpMove = z.object({ gameId, uci, ply: z.number().int().min(1).max(1000) }).strict();
+export const PvpDraw = z.object({ gameId, action: z.enum(["offer", "accept", "decline"]) }).strict();
+export const PvpState = z.object({
+  id: z.string(), status: z.enum(["open", "active", "finished", "aborted"]), rated: z.boolean(),
+  timeControl: TimeControl.nullable(), pool: z.string().nullable(),
+  white: z.object({ id: z.string().nullable(), name: z.string() }), black: z.object({ id: z.string().nullable(), name: z.string() }),
+  you: z.enum(["w", "b"]).nullable(), startFen: z.string(), fen: z.string(), ply: z.number().int(),
+  moves: z.array(z.object({ uci: z.string(), san: z.string() })),
+  /** Milliseconds left for each side at `serverNow`; `running` is the side whose clock runs. */
+  clock: z.object({ w: z.number(), b: z.number(), running: z.enum(["w", "b"]).nullable(), serverNow: z.number() }).nullable(),
+  drawOffer: z.enum(["w", "b"]).nullable(), result: z.string().nullable(), reason: z.string().nullable(),
+  inviteCode: z.string().nullable(),
+  ratingChange: z.object({ w: RatingChange.nullable(), b: RatingChange.nullable() }).nullable(),
+});
+export type PvpState = z.infer<typeof PvpState>;
+
 export const ROUTES = {
   "puzzle/start": PuzzleStart,
   "puzzle/result": PuzzleResult,
@@ -61,6 +83,16 @@ export const ROUTES = {
   "account/import": ImportLocal,
   "account/export": Empty,
   "account/delete": DeleteAccount,
+  "pvp/create": PvpCreate,
+  "pvp/info": PvpCode,
+  "pvp/accept": PvpCode,
+  "pvp/state": PvpGame,
+  "pvp/move": PvpMove,
+  "pvp/resign": PvpGame,
+  "pvp/draw": PvpDraw,
+  "pvp/claim-timeout": PvpGame,
+  "pvp/abort": PvpGame,
+  "pvp/list": Empty,
 } as const;
 export type Route = keyof typeof ROUTES;
 export type Body<R extends Route> = z.infer<(typeof ROUTES)[R]>;
@@ -68,4 +100,5 @@ export type Body<R extends Route> = z.infer<(typeof ROUTES)[R]>;
 /** Error codes the server returns as `{ error: code }`. */
 export type ApiErrorCode =
   | "bad-request" | "unauthorized" | "not-found" | "conflict" | "rate-limited"
-  | "no-profile" | "not-solved" | "illegal-game" | "server-error";
+  | "no-profile" | "not-solved" | "illegal-game" | "server-error"
+  | "not-your-turn" | "illegal-move" | "game-over" | "forbidden";

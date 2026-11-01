@@ -2,6 +2,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Body, Route } from "@sjakk/contracts";
 import { ApiCallError, type ApiPort, type AuthPort, type ProfilePort } from "../core/account.ts";
+import type { LivePort } from "../core/online.ts";
 
 export function supabaseClient(url: string, anonKey: string): SupabaseClient {
   return createClient(url, anonKey, { auth: { flowType: "pkce", persistSession: true, detectSessionInUrl: true } });
@@ -94,6 +95,19 @@ export function supabaseDocs(sb: SupabaseClient, userId: string) {
         },
       };
       return api;
+    },
+  };
+}
+
+/** Realtime: tell the caller when the game row or its moves change (row-level security applies). */
+export function supabaseLive(sb: SupabaseClient): LivePort {
+  return {
+    watch(gameId, onChange) {
+      const ch = sb.channel(`game-${gameId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "games", filter: `id=eq.${gameId}` }, () => onChange())
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "moves", filter: `game_id=eq.${gameId}` }, () => onChange())
+        .subscribe();
+      return () => { void sb.removeChannel(ch); };
     },
   };
 }
