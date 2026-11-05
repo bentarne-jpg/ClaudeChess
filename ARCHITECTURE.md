@@ -199,8 +199,8 @@ Initial tables: `users`, `ratings`, `games`, `game_players`, `moves`, `puzzle_at
   - **development:** every `dev/<name>` branch is built and published at `/dev/<name>/` for testing;
   - **staging:** `main` is published at `/next/`;
   - **production:** the site root, changed only by the Release or Rollback workflow.
-  Database migrations and Edge Functions follow the same channels: dev and staging use the staging
-  Supabase project, production uses the production project.
+  All channels use one Supabase project, `Sjakkverkstedet` (ADR-0006). Database changes are tested
+  in CI (E4) and deployed with the Supabase workflow before the code that needs them is merged.
 - **E4** CI runs the full Supabase stack locally (`supabase start`) for database and API tests. A
   separate staging project SHOULD be added before person-vs-person play is opened to others.
 - **E5** Generated files (for example the offline build) are produced in CI and published as
@@ -260,6 +260,7 @@ after it is accepted; a later ADR supersedes it.
 | 0003 | Login with Google, Facebook and Vipps | accepted |
 | 0004 | Release channels, kept versions and rollback | accepted |
 | 0005 | Nothing is saved without a login | accepted |
+| 0006 | One Supabase project for every channel | accepted |
 
 ## 11. Amending this manifest
 

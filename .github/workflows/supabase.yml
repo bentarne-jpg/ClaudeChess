@@ -1,23 +1,17 @@
-# Deploys database migrations and the api Edge Function to a Supabase project (manifest E3, E9).
-# Run by hand: Actions → Supabase → Run workflow. Staging first; production after the release is tested.
+# Deploys database migrations and the api Edge Function to the Supabase project (manifest E3, E9).
+# Run by hand: Actions → Supabase → Run workflow. There is one project for every channel (ADR-0006).
 name: Supabase
 on:
   workflow_dispatch:
-    inputs:
-      target:
-        description: "Which project"
-        type: choice
-        options: [staging, production]
-        required: true
 permissions:
   contents: read
 concurrency:
-  group: supabase-${{ inputs.target }}
+  group: supabase-production
   cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: supabase-${{ inputs.target }}
+    environment: supabase-production
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}

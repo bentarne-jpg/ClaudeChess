@@ -9,6 +9,9 @@ The app is published on GitHub Pages in three channels. Each one is a full copy 
 | Development | `https://bentarne-jpg.github.io/ClaudeChess/dev/<name>/` | a `dev/<name>` branch is pushed |
 | Any release | `https://bentarne-jpg.github.io/ClaudeChess/releases/<version>/` | kept forever |
 
+All channels use the same Supabase project (ADR-0006), so logins and saved data on `/next/` and
+dev previews are real.
+
 [`versions.json`](https://bentarne-jpg.github.io/ClaudeChess/versions.json) lists what is in
 production, every release, every dev channel, and the history of releases and rollbacks.
 
